@@ -1,0 +1,792 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SuperCap: Australian super salary sacrifice calculator</title>
+<meta name="description" content="Work out how much to salary sacrifice into super each pay to get close to your concessional contributions cap without going over. Runs entirely in your browser.">
+<meta name="author" content="James Corcoran">
+<meta name="color-scheme" content="light">
+<link rel="stylesheet" href="styles.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%2333475B'/><rect x='6' y='19' width='20' height='4' rx='1.5' fill='%23E3A612'/><rect x='6' y='9' width='13' height='4' rx='1.5' fill='%23F2F1ED'/></svg>">
+</head>
+<body>
+
+<!-- Icon sprite. Inline SVG only; nothing is fetched. -->
+<svg class="sprite" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg">
+  <symbol id="i-info" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+    <circle cx="10" cy="10" r="7.5"/><path d="M10 9v4.5"/><path d="M10 6.4v.1"/>
+  </symbol>
+  <symbol id="i-warning" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M10 2.8 18 16.5H2Z"/><path d="M10 8v3.6"/><path d="M10 14.1v.1"/>
+  </symbol>
+  <symbol id="i-check" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="10" cy="10" r="7.5"/><path d="m6.6 10.2 2.3 2.3 4.5-4.8"/>
+  </symbol>
+  <symbol id="i-error" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+    <circle cx="10" cy="10" r="7.5"/><path d="m7.5 7.5 5 5"/><path d="m12.5 7.5-5 5"/>
+  </symbol>
+  <symbol id="i-copy" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="7" y="7" width="9.5" height="9.5" rx="2"/><path d="M13 4.5H5.5a2 2 0 0 0-2 2V13"/>
+  </symbol>
+  <symbol id="i-mail" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="2.5" y="4.5" width="15" height="11" rx="2"/><path d="m3 6 7 5 7-5"/>
+  </symbol>
+  <symbol id="i-undo" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M3.5 6.5v4h4"/><path d="M4 10.5a6.2 6.2 0 1 1 1.8 4.6"/>
+  </symbol>
+  <symbol id="i-print" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M6 7.5V3h8v4.5"/><rect x="3" y="7.5" width="14" height="6" rx="1.5"/><path d="M6 12h8v5H6z"/>
+  </symbol>
+  <symbol id="i-arrow" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M4.5 10h11"/><path d="m11 5.5 4.5 4.5L11 14.5"/>
+  </symbol>
+</svg>
+
+<a class="skip-link" href="#journey">Skip to content</a>
+
+<header class="masthead">
+  <div class="masthead__inner">
+    <div class="brand">
+      <svg class="brand__mark" viewBox="0 0 32 32" aria-hidden="true" focusable="false">
+        <rect width="32" height="32" rx="7" fill="currentColor"/>
+        <rect x="6" y="19" width="20" height="4" rx="1.5" fill="#E3A612"/>
+        <rect x="6" y="9" width="13" height="4" rx="1.5" fill="#F5F4F0" opacity=".85"/>
+      </svg>
+      <div class="brand__text">
+        <h1 class="brand__name">SuperCap</h1>
+        <p class="brand__tagline">Australian super salary sacrifice calculator</p>
+      </div>
+    </div>
+
+    <div class="masthead__aside">
+      <p class="privacy-note">
+        <span class="privacy-note__dot" aria-hidden="true"></span>
+        Your figures stay in this browser
+      </p>
+      <div class="masthead__actions">
+        <button type="button" class="button button--utility" data-action="print">
+          <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-print"/></svg>
+          Print
+        </button>
+        <button type="button" class="button button--utility" data-action="reset-all">Reset all data</button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main class="journey" id="journey">
+
+  <nav class="stepper" data-region="stepper" aria-label="Setup progress">
+    <p class="stepper__status" data-field="stepper-status"></p>
+    <ol class="stepper__list" data-region="stepper-list"></ol>
+  </nav>
+
+  <div class="journey__setup" data-region="setup">
+
+    <section class="card step" data-step="year" aria-labelledby="h-year">
+      <div class="card__header">
+        <h2 class="card__title" id="h-year" tabindex="-1">Financial year</h2>
+        <span class="chip" data-field="rules-status">ATO published</span>
+      </div>
+      <p class="step__lead">Which year are you planning for? SuperCap uses the concessional cap and Super Guarantee rules that apply to that year.</p>
+
+      <div class="field-grid">
+        <p class="field">
+          <label class="field__label" for="in-financial-year">Financial year</label>
+          <select class="control" id="in-financial-year" data-input="financialYearKey"></select>
+        </p>
+
+        <p class="field">
+          <label class="field__label" for="in-as-at">Calculate as at</label>
+          <input class="control" type="date" id="in-as-at" data-input="asAtDate">
+          <span class="field__hint">Decides which pays have already happened.</span>
+        </p>
+      </div>
+
+      <div class="field field--full is-hidden" data-region="manual-cap">
+        <label class="field__label" for="in-manual-cap">Concessional cap for this year</label>
+        <span class="money-input">
+          <span class="money-input__prefix" aria-hidden="true">$</span>
+          <input class="control control--money" type="text" inputmode="decimal" id="in-manual-cap" data-input="cap.manualCapCents" autocomplete="off">
+        </span>
+        <span class="field__hint">Check the current cap with the ATO before relying on it.</span>
+      </div>
+
+      <div data-region="issues-cap"></div>
+    </section>
+
+    <section class="card step" data-step="salary" aria-labelledby="h-salary">
+      <div class="card__header">
+        <h2 class="card__title" id="h-salary" tabindex="-1">Salary</h2>
+        <span class="chip chip--example" data-field="example-badge">Example figures</span>
+      </div>
+      <p class="step__lead">What will you earn this financial year? If you get a rise part-way through, SuperCap pro-rates by calendar day.</p>
+
+      <p class="switch">
+        <input type="checkbox" id="in-has-increase" data-input="salary.hasIncrease" checked>
+        <label for="in-has-increase">I get a pay increase during this year</label>
+      </p>
+
+      <div class="field-grid">
+        <p class="field">
+          <label class="field__label" for="in-salary-before" data-label="salary-before">Salary before increase</label>
+          <span class="money-input">
+            <span class="money-input__prefix" aria-hidden="true">$</span>
+            <input class="control control--money" type="text" inputmode="decimal" id="in-salary-before" data-input="salary.beforeCents" autocomplete="off">
+          </span>
+        </p>
+
+        <p class="field" data-region="salary-after">
+          <label class="field__label" for="in-salary-after">Salary from increase</label>
+          <span class="money-input">
+            <span class="money-input__prefix" aria-hidden="true">$</span>
+            <input class="control control--money" type="text" inputmode="decimal" id="in-salary-after" data-input="salary.afterCents" autocomplete="off">
+          </span>
+        </p>
+
+        <p class="field" data-region="increase-date">
+          <label class="field__label" for="in-increase-date">Increase takes effect</label>
+          <input class="control" type="date" id="in-increase-date" data-input="salary.increaseDate">
+        </p>
+      </div>
+
+      <p class="note" data-field="salary-note"></p>
+      <div data-region="issues-salary"></div>
+    </section>
+
+    <section class="card step" data-step="bonus" aria-labelledby="h-bonus">
+      <div class="card__header">
+        <h2 class="card__title" id="h-bonus" tabindex="-1">Bonus</h2>
+      </div>
+      <p class="step__lead">A bonus paid this year uses concessional cap space if your employer pays super on it. Leave this at $0 if you do not expect one.</p>
+
+      <div class="field-grid">
+        <p class="field">
+          <label class="field__label" for="in-bonus">Bonus amount</label>
+          <span class="money-input">
+            <span class="money-input__prefix" aria-hidden="true">$</span>
+            <input class="control control--money" type="text" inputmode="decimal" id="in-bonus" data-input="bonus.amountCents" autocomplete="off">
+          </span>
+        </p>
+
+        <p class="field">
+          <label class="field__label" for="in-bonus-date">Paid on</label>
+          <input class="control" type="date" id="in-bonus-date" data-input="bonus.paymentDate">
+          <span class="field__hint">Use the date it is actually paid, even if it relates to last year's performance.</span>
+        </p>
+      </div>
+
+      <p class="switch">
+        <input type="checkbox" id="in-bonus-super" data-input="bonus.attractsSuper" checked>
+        <label for="in-bonus-super">Employer super is paid on this bonus</label>
+      </p>
+      <p class="note">Bonus treatment varies between employers. Confirm with Payroll if you are not sure.</p>
+
+      <div data-region="issues-bonus"></div>
+    </section>
+
+    <section class="card step" data-step="payroll" aria-labelledby="h-payroll">
+      <div class="card__header">
+        <h2 class="card__title" id="h-payroll" tabindex="-1">Payroll</h2>
+      </div>
+      <p class="step__lead">How often you are paid, and one known payday. SuperCap works out the rest of the cycle from there.</p>
+
+      <fieldset class="segmented">
+        <legend class="field__label">How often are you paid?</legend>
+        <div class="segmented__options">
+          <span class="segmented__option">
+            <input type="radio" name="pay-frequency" id="in-freq-weekly" value="weekly" data-input="payroll.frequency">
+            <label for="in-freq-weekly">Weekly</label>
+          </span>
+          <span class="segmented__option">
+            <input type="radio" name="pay-frequency" id="in-freq-fortnightly" value="fortnightly" data-input="payroll.frequency" checked>
+            <label for="in-freq-fortnightly">Fortnightly</label>
+          </span>
+          <span class="segmented__option">
+            <input type="radio" name="pay-frequency" id="in-freq-monthly" value="monthly" data-input="payroll.frequency">
+            <label for="in-freq-monthly">Monthly</label>
+          </span>
+        </div>
+      </fieldset>
+
+      <div class="field-grid">
+        <p class="field">
+          <label class="field__label" for="in-anchor">Known payday</label>
+          <input class="control" type="date" id="in-anchor" data-input="payroll.anchorDate">
+          <span class="field__hint" data-field="anchor-hint">Any payday from your normal fortnightly cycle. SuperCap works out the rest.</span>
+        </p>
+
+        <p class="field">
+          <label class="field__label" for="in-effective">New sacrifice starts from</label>
+          <select class="control" id="in-effective" data-input="payroll.newSacrificeEffectiveDate"></select>
+        </p>
+      </div>
+
+      <p class="switch">
+        <input type="checkbox" id="in-include-today" data-input="payroll.includeTodaysPayroll">
+        <label for="in-include-today">Include today's payroll if it falls on a payday</label>
+      </p>
+
+      <p class="utility-row">
+        <button type="button" class="button button--utility" data-action="reset-anchor">
+          <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-undo"/></svg>
+          Reset payday to default
+        </button>
+      </p>
+
+      <div data-region="issues-payroll"></div>
+    </section>
+
+    <section class="card step" data-step="existing" aria-labelledby="h-existing">
+      <div class="card__header">
+        <h2 class="card__title" id="h-existing" tabindex="-1">Salary sacrifice so far</h2>
+      </div>
+      <p class="step__lead">Anything you have already sacrificed this year counts toward the cap, so the recommendation only covers what is left. If you enter it from payroll, SuperCap uses the pay cycle you just set.</p>
+
+      <fieldset class="segmented">
+        <legend class="field__label">How do you want to enter it?</legend>
+        <div class="segmented__options">
+          <span class="segmented__option">
+            <input type="radio" name="existing-mode" id="in-mode-actual" value="actual" data-input="existing.mode" checked>
+            <label for="in-mode-actual">Amount to date</label>
+          </span>
+          <span class="segmented__option">
+            <input type="radio" name="existing-mode" id="in-mode-payroll" value="payroll" data-input="existing.mode">
+            <label for="in-mode-payroll">From payroll</label>
+          </span>
+        </div>
+      </fieldset>
+
+      <div data-region="existing-actual">
+        <p class="field field--full">
+          <label class="field__label" for="in-existing-actual">Already contributed this year</label>
+          <span class="money-input">
+            <span class="money-input__prefix" aria-hidden="true">$</span>
+            <input class="control control--money" type="text" inputmode="decimal" id="in-existing-actual" data-input="existing.actualCents" autocomplete="off">
+          </span>
+          <span class="field__hint">Most accurate if you can see the amount your fund has received.</span>
+        </p>
+      </div>
+
+      <div class="field-grid is-hidden" data-region="existing-payroll">
+        <p class="field">
+          <label class="field__label" for="in-existing-perpay" data-field="existing-perpay-label">Current sacrifice per pay</label>
+          <span class="money-input">
+            <span class="money-input__prefix" aria-hidden="true">$</span>
+            <input class="control control--money" type="text" inputmode="decimal" id="in-existing-perpay" data-input="existing.perPayCents" autocomplete="off">
+          </span>
+        </p>
+        <p class="field">
+          <label class="field__label" for="in-existing-from">Arrangement started</label>
+          <input class="control" type="date" id="in-existing-from" data-input="existing.effectiveFrom">
+        </p>
+        <p class="field field--full">
+          <span class="note" data-field="existing-note"></span>
+        </p>
+      </div>
+    </section>
+
+    <section class="card step" data-step="carry" aria-labelledby="h-carry-forward">
+      <div class="card__header">
+        <h2 class="card__title" id="h-carry-forward" tabindex="-1">Carry-forward cap</h2>
+      </div>
+      <p class="note">Unused concessional cap from earlier years can be carried forward if you are eligible. SuperCap will not guess the amount or assume you qualify. Get the figure from myGov or your adviser, and leave this at $0 if you are not sure.</p>
+      <p class="field field--full">
+        <label class="field__label" for="in-carry-forward">ATO-confirmed unused carry-forward cap</label>
+        <span class="money-input">
+          <span class="money-input__prefix" aria-hidden="true">$</span>
+          <input class="control control--money" type="text" inputmode="decimal" id="in-carry-forward" data-input="cap.carryForwardCents" autocomplete="off">
+        </span>
+      </p>
+
+      <div class="advanced-invite">
+        <div class="advanced-invite__copy">
+          <p class="advanced-invite__title">Need advanced options?</p>
+          <p class="advanced-invite__text">Employer super above the Super Guarantee, personal deductible contributions, or actual figures from your fund.</p>
+        </div>
+        <button type="button" class="button button--accent" data-action="open-advanced">Advanced options</button>
+      </div>
+    </section>
+
+    <section class="card step" data-step="advanced" aria-labelledby="h-advanced">
+      <div class="card__header">
+        <h2 class="card__title" id="h-advanced" tabindex="-1">Advanced</h2>
+      </div>
+      <p class="step__lead">Most people can skip this. Use it if you contribute extra yourself, your employer pays above the Super Guarantee, or you have actual fund figures later in the year.</p>
+
+        <h3 class="subhead">Employer super</h3>
+        <div class="field-grid">
+          <p class="field">
+            <label class="field__label" for="in-sg-rate">Super Guarantee rate</label>
+            <span class="money-input money-input--suffix">
+              <input class="control control--money" type="text" inputmode="decimal" id="in-sg-rate" data-input="employerSuper.sgRate" data-format="percent" autocomplete="off">
+              <span class="money-input__suffix" aria-hidden="true">%</span>
+            </span>
+          </p>
+          <p class="field">
+            <label class="field__label" for="in-max-base">Maximum contribution base</label>
+            <span class="money-input">
+              <span class="money-input__prefix" aria-hidden="true">$</span>
+              <input class="control control--money" type="text" inputmode="decimal" id="in-max-base" data-input="cap.manualMaxBaseCents" autocomplete="off">
+            </span>
+          </p>
+        </div>
+        <p class="switch">
+          <input type="checkbox" id="in-apply-max-base" data-input="employerSuper.applyMaxBase" checked>
+          <label for="in-apply-max-base">Apply the maximum contribution base</label>
+        </p>
+        <p class="note">Employers only have to pay super up to this level of earnings. Turn it off if yours contributes above the statutory minimum.</p>
+
+        <h3 class="subhead">Other concessional contributions</h3>
+        <p class="note">These use up concessional cap space too. After-tax (non-concessional) contributions do not. Leave those out.</p>
+        <div class="field-grid">
+          <p class="field">
+            <label class="field__label" for="in-other-employer">Other employer contributions</label>
+            <span class="money-input">
+              <span class="money-input__prefix" aria-hidden="true">$</span>
+              <input class="control control--money" type="text" inputmode="decimal" id="in-other-employer" data-input="other.employerConcessionalCents" autocomplete="off">
+            </span>
+          </p>
+          <p class="field">
+            <label class="field__label" for="in-personal-deductible">Personal deductible contributions</label>
+            <span class="money-input">
+              <span class="money-input__prefix" aria-hidden="true">$</span>
+              <input class="control control--money" type="text" inputmode="decimal" id="in-personal-deductible" data-input="other.personalDeductibleCents" autocomplete="off">
+            </span>
+          </p>
+          <p class="field">
+            <label class="field__label" for="in-other-concessional">Other concessional contributions</label>
+            <span class="money-input">
+              <span class="money-input__prefix" aria-hidden="true">$</span>
+              <input class="control control--money" type="text" inputmode="decimal" id="in-other-concessional" data-input="other.otherConcessionalCents" autocomplete="off">
+            </span>
+          </p>
+        </div>
+
+        <h3 class="subhead">Actual fund figures</h3>
+        <p class="switch">
+          <input type="checkbox" id="in-use-actuals" data-input="actuals.enabled">
+          <label for="in-use-actuals">Use actual amounts my fund has received</label>
+        </p>
+        <p class="note">Useful later in the year. Amounts received up to your calculation date come from these figures; everything after it stays a SuperCap estimate.</p>
+        <div class="field-grid is-hidden" data-region="actuals">
+          <p class="field">
+            <label class="field__label" for="in-actual-employer">Employer contributions received</label>
+            <span class="money-input">
+              <span class="money-input__prefix" aria-hidden="true">$</span>
+              <input class="control control--money" type="text" inputmode="decimal" id="in-actual-employer" data-input="actuals.employerReceivedCents" autocomplete="off">
+            </span>
+          </p>
+          <p class="field">
+            <label class="field__label" for="in-actual-sacrifice">Salary sacrifice received</label>
+            <span class="money-input">
+              <span class="money-input__prefix" aria-hidden="true">$</span>
+              <input class="control control--money" type="text" inputmode="decimal" id="in-actual-sacrifice" data-input="actuals.salarySacrificeReceivedCents" autocomplete="off">
+            </span>
+          </p>
+          <p class="field">
+            <label class="field__label" for="in-actual-other">Other concessional received</label>
+            <span class="money-input">
+              <span class="money-input__prefix" aria-hidden="true">$</span>
+              <input class="control control--money" type="text" inputmode="decimal" id="in-actual-other" data-input="actuals.otherReceivedCents" autocomplete="off">
+            </span>
+          </p>
+        </div>
+
+    </section>
+
+    <div class="step-nav" data-region="step-nav">
+      <button type="button" class="button button--secondary" data-action="step-back" data-region="step-back">Back</button>
+      <div class="step-nav__forward">
+        <button type="button" class="button button--utility" data-action="skip-bonus" data-region="skip-bonus">No bonus this year</button>
+        <button type="button" class="button button--primary" data-action="step-next" data-region="step-next">
+          <span data-field="step-next-label">Continue</span>
+          <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-arrow"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="journey__results is-hidden" data-region="results">
+
+    <div class="results-hero">
+    <section class="card answers" aria-labelledby="h-answers">
+      <div class="card__header">
+        <h2 class="card__title" id="h-answers">Your answers</h2>
+        <button type="button" class="button button--utility" data-action="edit-setup">Change answers</button>
+      </div>
+      <ul class="answers__list" data-region="answers"></ul>
+    </section>
+
+      <section class="card result" id="result" aria-labelledby="h-result">
+        <div class="result__head">
+          <h2 class="eyebrow" id="h-result" tabindex="-1">Recommended salary sacrifice</h2>
+          <span class="chip chip--accent is-hidden" data-field="actual-badge">Actual + projected</span>
+        </div>
+
+        <div class="readout">
+          <p class="readout__value">
+            <span class="readout__currency" data-region="readout-currency" aria-hidden="true">$</span><span data-field="recommended-amount">0</span>
+          </p>
+          <p class="readout__unit" data-region="readout-unit" data-field="readout-unit">/ fortnight</p>
+        </div>
+
+        <p class="readout__meta">
+          <span data-field="deduction-count">0 deductions remaining</span>
+          <span class="readout__meta-sep" aria-hidden="true">·</span>
+          <span data-field="deduction-range"></span>
+        </p>
+
+        <hr class="rule rule--dotted">
+
+        <div class="result__blocked is-hidden" data-region="result-blocked">
+          <p class="result__blocked-title" data-field="blocked-title"></p>
+          <p class="result__blocked-text" data-field="blocked-text"></p>
+        </div>
+
+        <div class="sacrifice" data-region="sacrifice">
+          <div class="sacrifice__head">
+            <label class="field__label" for="in-slider" data-field="slider-label">Salary sacrifice per fortnight</label>
+            <span class="money-input money-input--compact">
+              <span class="money-input__prefix" aria-hidden="true">$</span>
+              <input class="control control--money control--amount" type="text" inputmode="decimal" id="in-slider-amount" aria-label="Salary sacrifice per pay, in dollars" autocomplete="off">
+            </span>
+          </div>
+
+          <div class="slider">
+            <div class="slider__annotation" data-region="slider-marker">
+              <span class="annotation" data-field="marker-label">recommended</span>
+            </div>
+            <div class="slider__track-wrap">
+              <div class="slider__marker" data-region="marker-tick" aria-hidden="true"></div>
+              <input type="range" class="slider__input" id="in-slider" min="0" max="25000" step="100" value="0"
+                     aria-describedby="slider-status">
+            </div>
+            <div class="slider__scale">
+              <span data-field="slider-min">$0</span>
+              <button type="button" class="button button--utility" data-action="reset-slider">
+                <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-undo"/></svg>
+                Reset to recommendation
+              </button>
+              <span data-field="slider-max">$250</span>
+            </div>
+            <p class="slider__exact" data-field="exact-target"></p>
+          </div>
+
+          <fieldset class="buffer">
+            <legend class="field__label">Leave a safety buffer</legend>
+            <div class="buffer__options" data-region="buffer-options">
+              <span class="buffer__option">
+                <input type="radio" name="buffer" id="buffer-0" value="0">
+                <label for="buffer-0">$0</label>
+              </span>
+              <span class="buffer__option">
+                <input type="radio" name="buffer" id="buffer-50" value="5000" checked>
+                <label for="buffer-50">$50</label>
+              </span>
+              <span class="buffer__option">
+                <input type="radio" name="buffer" id="buffer-100" value="10000">
+                <label for="buffer-100">$100</label>
+              </span>
+              <span class="buffer__option">
+                <input type="radio" name="buffer" id="buffer-custom" value="custom">
+                <label for="buffer-custom">Custom</label>
+              </span>
+              <span class="money-input money-input--compact is-hidden" data-region="buffer-custom">
+                <span class="money-input__prefix" aria-hidden="true">$</span>
+                <input class="control control--money" type="text" inputmode="decimal" id="in-buffer-custom" aria-label="Custom safety buffer, in dollars" autocomplete="off">
+              </span>
+            </div>
+          </fieldset>
+        </div>
+
+        <div class="meter" data-region="meter">
+          <div class="meter__head">
+            <h3 class="eyebrow eyebrow--quiet">Projected concessional contributions</h3>
+            <p class="meter__figure">
+              <span data-field="meter-total">$0</span>
+              <span class="meter__of">of</span>
+              <span data-field="meter-cap">$0</span>
+            </p>
+          </div>
+
+          <div class="meter__bar" data-region="meter-bar" role="img" data-field="meter-alt">
+            <div class="meter__overflow is-hidden" data-region="meter-overflow"></div>
+            <div class="meter__capline is-hidden" data-region="meter-capline"></div>
+          </div>
+
+          <ul class="legend" data-region="legend"></ul>
+        </div>
+
+        <p class="status" id="slider-status" data-region="status" role="status" aria-live="polite">
+          <svg class="icon status__icon" aria-hidden="true" focusable="false"><use href="#i-check" data-region="status-icon"/></svg>
+          <span class="status__label" data-field="status-label"></span>
+          <span class="status__text" data-field="status-text"></span>
+        </p>
+      </section>
+    </div>
+
+      <div data-region="issues-result"></div>
+
+  <section class="card ledger" aria-labelledby="h-breakdown">
+    <div class="card__header">
+      <h2 class="card__title" id="h-breakdown">How this adds up</h2>
+      <span class="chip" data-field="breakdown-year"></span>
+    </div>
+
+    <div class="ledger__layout">
+      <dl class="ledger__rows" data-region="breakdown"></dl>
+      <p class="explanation" data-field="explanation"></p>
+    </div>
+  </section>
+
+  <section class="card email" aria-labelledby="h-email">
+    <div class="card__header">
+      <h2 class="card__title" id="h-email">Payroll email</h2>
+      <span class="chip chip--accent is-hidden" data-field="custom-amount-badge">Using custom amount</span>
+    </div>
+
+    <div class="email__layout">
+      <div class="email__form">
+    <div class="field-grid">
+      <p class="field">
+        <label class="field__label" for="in-email-amount">Amount</label>
+        <span class="money-input">
+          <span class="money-input__prefix" aria-hidden="true">$</span>
+          <input class="control control--money" type="text" inputmode="decimal" id="in-email-amount" autocomplete="off">
+        </span>
+      </p>
+      <p class="field">
+        <label class="field__label" for="in-email-frequency">Frequency</label>
+        <select class="control" id="in-email-frequency">
+          <option value="weekly">Weekly</option>
+          <option value="fortnightly">Fortnightly</option>
+          <option value="per-pay">Per pay</option>
+          <option value="monthly">Monthly</option>
+          <option value="one-off">One-off</option>
+          <option value="annual">Annual</option>
+        </select>
+      </p>
+      <p class="field">
+        <label class="field__label" for="in-email-effective">Effective from</label>
+        <select class="control" id="in-email-effective"></select>
+      </p>
+      <p class="field">
+        <label class="field__label" for="in-email-name">Your name</label>
+        <input class="control" type="text" id="in-email-name" placeholder="Optional" autocomplete="name">
+      </p>
+      <p class="field">
+        <label class="field__label" for="in-email-to">Send to</label>
+        <input class="control" type="email" id="in-email-to" placeholder="Payroll email address" autocomplete="off" spellcheck="false">
+      </p>
+      <p class="field field--full is-hidden" data-region="email-amount-reset">
+        <button type="button" class="button button--utility button--inline" data-action="reset-email-amount">
+          <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-undo"/></svg>
+          Match the slider
+        </button>
+      </p>
+    </div>
+
+    <div data-region="issues-email"></div>
+
+    <div class="button-row">
+      <button type="button" class="button button--primary" data-action="copy-email">
+        <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-copy"/></svg>
+        Copy email
+      </button>
+      <button type="button" class="button button--secondary" data-action="open-email">
+        <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-mail"/></svg>
+        Open in email app
+      </button>
+      <button type="button" class="button button--secondary" data-action="copy-amount">Copy amount</button>
+      <button type="button" class="button button--utility" data-action="regenerate-email">Regenerate</button>
+      <span class="toast" data-region="toast" role="status" aria-live="polite"></span>
+    </div>
+      </div>
+
+    <div class="letter">
+      <div class="letter__header">
+        <p class="letter__line">
+          <span class="letter__label">To</span>
+          <span class="letter__value" data-field="letter-to">Payroll</span>
+        </p>
+        <p class="letter__line">
+          <label class="letter__label" for="in-email-subject">Subject</label>
+          <input class="letter__input" type="text" id="in-email-subject">
+        </p>
+      </div>
+      <label class="visually-hidden" for="in-email-body">Email body</label>
+      <textarea class="letter__body" id="in-email-body" rows="9" spellcheck="true"></textarea>
+    </div>
+    </div>
+  </section>
+
+  <details class="card card--details" aria-labelledby="h-schedule">
+    <summary class="card__summary">
+      <span class="card__title" id="h-schedule">Pay schedule</span>
+      <span class="card__summary-hint" data-field="schedule-hint"></span>
+    </summary>
+    <div class="card__details-body">
+      <ol class="schedule" data-region="schedule"></ol>
+      <ul class="schedule-key">
+        <li><span class="dot dot--past" aria-hidden="true"></span>Completed</li>
+        <li><span class="dot dot--next" aria-hidden="true"></span>Next pay</li>
+        <li><span class="dot dot--sacrifice" aria-hidden="true"></span>New sacrifice starts</li>
+        <li><span class="dot dot--bonus" aria-hidden="true"></span>Bonus</li>
+      </ul>
+    </div>
+  </details>
+
+  <details class="card card--details" aria-labelledby="h-method">
+    <summary class="card__summary">
+      <span class="card__title" id="h-method">How SuperCap calculates this</span>
+      <span class="card__summary-hint">Assumptions, methodology and rules data</span>
+    </summary>
+    <div class="card__details-body prose">
+      <dl class="method">
+        <dt>Financial year</dt>
+        <dd>Australian financial years run 1 July to 30 June. Everything is scoped to the year you select.</dd>
+
+        <dt>Salary</dt>
+        <dd>Salary is pro-rated by exact calendar days either side of your increase date, not by whole months. Your employer's payroll may differ slightly.</dd>
+
+        <dt>Employer super</dt>
+        <dd>Estimated as the Super Guarantee rate applied to your qualifying earnings. Salary sacrifice does not reduce this estimate. Your normal SG entitlement is worked out as though you had not sacrificed anything.</dd>
+
+        <dt>Bonus</dt>
+        <dd>Counted in the financial year it is <em>paid</em>, not the year it was earned. Employer super on a bonus is included only when you say your employer pays it.</dd>
+
+        <dt>Maximum contribution base</dt>
+        <dd>From 1 July 2026 this is an annual figure. Once qualifying earnings reach it, employers need not pay further Super Guarantee for the year, so SuperCap caps the statutory estimate. Where the base binds, the split between salary and bonus super is proportional. The total is the reliable figure.</dd>
+
+        <dt>Concessional cap</dt>
+        <dd>Employer contributions, salary sacrifice and personal deductible contributions all count towards the same cap. Employer super consumes cap space; it is not added on top of it.</dd>
+
+        <dt>Pay cycle</dt>
+        <dd>Every payday is derived from the one known payday you enter. Weekly and fortnightly cycles step a fixed number of days; monthly cycles use the same calendar day each month, clamped to the last day of shorter months. SuperCap counts the pays that fall in the year rather than assuming 26, 12 or 52.</dd>
+
+        <dt>Remaining deductions</dt>
+        <dd>Counted from the payday your new election starts, through to the last payday in the year. A payday falling on your calculation date is assumed to be already processed unless you say otherwise.</dd>
+
+        <dt>Safety buffer and rounding</dt>
+        <dd>The recommendation is rounded down to a whole dollar after subtracting your buffer, so rounding can never push you past your target.</dd>
+
+        <dt>Actual figures</dt>
+        <dd>When actual fund figures are switched on, amounts received up to your calculation date come from what you entered, and the remainder of the year stays a SuperCap estimate.</dd>
+
+        <dt>Contribution timing</dt>
+        <dd>Under Payday Super, when a contribution reaches your fund affects which year it counts in. SuperCap is a planner, not a fund ledger. Your fund's records and the ATO are authoritative.</dd>
+      </dl>
+
+      <div class="provenance">
+        <h3 class="eyebrow eyebrow--quiet">Australian rules data</h3>
+        <dl class="provenance__grid">
+          <div><dt>Financial year</dt><dd data-field="prov-year"></dd></div>
+          <div><dt>Status</dt><dd data-field="prov-status"></dd></div>
+          <div><dt>Last verified</dt><dd data-field="prov-verified"></dd></div>
+          <div><dt>Source</dt><dd data-field="prov-source"></dd></div>
+          <div><dt>Rules version</dt><dd data-field="prov-rules"></dd></div>
+          <div><dt>App version</dt><dd data-field="prov-app"></dd></div>
+        </dl>
+        <p class="note" data-field="prov-note"></p>
+        <p class="note">SuperCap carries a static dataset. Nothing updates automatically. A maintainer edits <code>dev/data.json</code> when the rules change.</p>
+      </div>
+    </div>
+  </details>
+
+  <footer class="disclaimer">
+    <p><strong>SuperCap provides estimates for Australian salary sacrifice planning and is not financial or tax advice.</strong></p>
+    <p>Employer payroll calculations, employment arrangements, contribution timing, bonus treatment and the date contributions are received by your super fund can all affect your actual concessional contributions. Check your actual contributions with your super fund and the ATO before making a final year-end contribution.</p>
+    <p class="disclaimer__meta">
+      <span data-field="footer-version"></span>
+      <span class="readout__meta-sep" aria-hidden="true">·</span>
+      <span data-field="footer-generated"></span>
+    </p>
+  </footer>
+
+  </div>
+</main>
+
+<footer class="colophon">
+  <p class="colophon__line">
+    Made with
+    <svg class="colophon__heart" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+      <path fill="currentColor" d="M8 13.6c-.3 0-.5-.1-.7-.3C5.1 11.4 3.2 9.7 2.2 8.3 1.3 7.1 1 6.1 1 5.2 1 3.5 2.3 2.2 4 2.2c1 0 1.9.5 2.5 1.3L8 5l1.5-1.5C10.1 2.7 11 2.2 12 2.2c1.7 0 3 1.3 3 3 0 .9-.3 1.9-1.2 3.1-1 1.4-2.9 3.1-5.1 5-.2.2-.4.3-.7.3Z"/>
+    </svg>
+    by
+    <a class="colophon__name" href="https://github.com/jorks" rel="noopener noreferrer">James Corcoran</a>
+  </p>
+  <p class="colophon__links">
+    <a href="https://github.com/jorks" rel="noopener noreferrer">GitHub</a>
+    <span aria-hidden="true">·</span>
+    <a href="https://www.linkedin.com/in/jamescorc/" rel="noopener noreferrer">LinkedIn</a>
+  </p>
+</footer>
+
+<!-- Templates: cloned and filled with textContent, never assembled as HTML strings. -->
+<template id="tpl-infobox">
+  <div class="infobox">
+    <svg class="icon infobox__icon" aria-hidden="true" focusable="false"><use/></svg>
+    <div class="infobox__body">
+      <p class="infobox__title"></p>
+      <p class="infobox__message"></p>
+    </div>
+  </div>
+</template>
+
+<template id="tpl-ledger-row">
+  <div class="ledger__row">
+    <dt class="ledger__label"></dt>
+    <dd class="ledger__value"></dd>
+  </div>
+</template>
+
+<template id="tpl-legend-item">
+  <li class="legend__item">
+    <span class="legend__swatch" aria-hidden="true"></span>
+    <span class="legend__label"></span>
+    <span class="legend__value"></span>
+  </li>
+</template>
+
+<template id="tpl-schedule-row">
+  <li class="schedule__row">
+    <span class="schedule__index"></span>
+    <span class="schedule__weekday"></span>
+    <span class="schedule__date"></span>
+    <span class="schedule__tags"></span>
+  </li>
+</template>
+
+<template id="tpl-schedule-tag">
+  <span class="tag"></span>
+</template>
+
+<template id="tpl-stepper-item">
+  <li class="stepper__item">
+    <button type="button" class="stepper__button">
+      <span class="stepper__rail" aria-hidden="true"></span>
+      <span class="stepper__index"></span>
+      <span class="stepper__label"></span>
+    </button>
+  </li>
+</template>
+
+<template id="tpl-answer">
+  <li class="answers__row">
+    <button type="button" class="answers__edit" data-action="edit-step">
+      <span class="answers__copy">
+        <span class="answers__label"></span>
+        <span class="answers__value"></span>
+      </span>
+      <span class="answers__change">Change</span>
+    </button>
+  </li>
+</template>
+
+<script src="data.generated.js" defer></script>
+<script src="calculations.js" defer></script>
+<script src="app.js" defer></script>
+</body>
+</html>

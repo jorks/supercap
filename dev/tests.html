@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SuperCap: calculation tests</title>
+<link rel="stylesheet" href="../styles.css">
+<style>
+  .test-page { max-width: 960px; margin: 0 auto; padding: 32px var(--gutter) 64px; }
+  .test-summary { display: flex; align-items: baseline; gap: 14px; margin: 18px 0 26px;
+    padding: 16px 20px; border-radius: var(--r-card); border: 1px solid var(--rule); background: var(--surface); }
+  .test-summary__count { font-family: var(--font-mono); font-size: 1.9rem; font-weight: 600; }
+  .test-summary.is-pass .test-summary__count { color: var(--success); }
+  .test-summary.is-fail .test-summary__count { color: var(--danger); }
+  .test-suite { margin-bottom: 20px; }
+  .test-suite h2 { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--ink-faint); margin-bottom: 6px; }
+  .test-case { display: grid; grid-template-columns: 1.4rem 1fr; gap: 8px; padding: 4px 0;
+    font-size: 0.875rem; border-bottom: 1px dotted var(--rule); }
+  .test-case__mark { font-family: var(--font-mono); }
+  .test-case.is-pass .test-case__mark { color: var(--success); }
+  .test-case.is-fail { color: var(--danger); font-weight: 560; }
+  .test-case__message { grid-column: 2; font-family: var(--font-mono); font-size: 0.78rem;
+    color: var(--danger); padding: 4px 0 2px; }
+</style>
+</head>
+<body>
+<div class="test-page">
+  <h1 class="brand__name">SuperCap tests</h1>
+  <p class="brand__tagline">Assertions over <code>calculations.js</code>. Open this file directly. No server needed.</p>
+
+  <div class="test-summary" id="summary">
+    <span class="test-summary__count" id="summary-count">…</span>
+    <span id="summary-detail">Running</span>
+  </div>
+
+  <div id="results"></div>
+</div>
+
+<script src="../data.generated.js"></script>
+<script src="../calculations.js"></script>
+<script src="tests.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  var results = window.SuperCapTests.runAll();
+  var container = document.getElementById('results');
+
+  results.suites.forEach(function (suite) {
+    var section = document.createElement('section');
+    section.className = 'test-suite';
+
+    var heading = document.createElement('h2');
+    heading.textContent = suite.name;
+    section.appendChild(heading);
+
+    suite.cases.forEach(function (testCase) {
+      var row = document.createElement('div');
+      row.className = 'test-case ' + (testCase.passed ? 'is-pass' : 'is-fail');
+
+      var mark = document.createElement('span');
+      mark.className = 'test-case__mark';
+      mark.textContent = testCase.passed ? '\u2713' : '\u2717';
+      row.appendChild(mark);
+
+      var name = document.createElement('span');
+      name.textContent = testCase.name;
+      row.appendChild(name);
+
+      if (!testCase.passed) {
+        var message = document.createElement('span');
+        message.className = 'test-case__message';
+        message.textContent = testCase.message;
+        row.appendChild(message);
+      }
+
+      section.appendChild(row);
+    });
+
+    container.appendChild(section);
+  });
+
+  var summary = document.getElementById('summary');
+  summary.classList.add(results.failed ? 'is-fail' : 'is-pass');
+  document.getElementById('summary-count').textContent = results.passed + '/' + results.total;
+  document.getElementById('summary-detail').textContent = results.failed
+    ? results.failed + ' failing'
+    : 'All assertions passed';
+
+  console.log('SuperCap: ' + results.passed + ' passed, ' + results.failed + ' failed.');
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,28 @@
+# OS
+.DS_Store
+.AppleDouble
+.LSOverride
+Thumbs.db
+Desktop.ini
+
+# Editors
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+*.sublime-workspace
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+
+# Dependencies (none today; ignore if they appear)
+node_modules/
+
+# Logs and coverage
+*.log
+npm-debug.log*
+coverage/
+.nyc_output/
