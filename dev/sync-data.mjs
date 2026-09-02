@@ -90,6 +90,12 @@ function validate(data) {
     const allowed = ['verified', 'legislated', 'current-law-continuing', 'not-yet-published'];
     require(allowed.includes(status), `${where}.metadata.status must be one of ${allowed.join(', ')}`);
 
+    const concessionalRate = year.tax?.concessionalContributionsRate;
+    require(
+      typeof concessionalRate === 'number' && concessionalRate > 0 && concessionalRate < 1,
+      `${where}.tax.concessionalContributionsRate must be a decimal fraction such as 0.15`
+    );
+
     const brackets = year.tax?.residentRates;
     if (!Array.isArray(brackets) || brackets.length === 0) {
       errors.push(`${where}.tax.residentRates must be a non-empty array`);

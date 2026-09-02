@@ -557,6 +557,156 @@ window.SuperCapCalc = (function () {
     };
   }
 
+  // ─────────────────────────────────────────────────────────────── tax ──
+
+  /**
+   * Progressive resident income tax on a taxable amount, using the FY brackets.
+   * Brackets are stored in dollars; everything here stays in integer cents.
+   */
+  function incomeTaxCents(taxableCents, brackets) {
+    var taxable = Math.max(0, Math.round(Number(taxableCents) || 0));
+    if (!Array.isArray(brackets) || !brackets.length) return 0;
+
+    var tax = 0;
+    for (var i = 0; i < brackets.length; i += 1) {
+      var from = toCents(brackets[i].from);
+      var to = brackets[i].to === null || brackets[i].to === undefined
+        ? Number.POSITIVE_INFINITY
+        : toCents(brackets[i].to);
+      if (taxable <= from) break;
+      var slice = Math.min(taxable, to) - from;
+      if (slice > 0) tax += slice * brackets[i].rate;
+    }
+    return Math.round(tax);
+  }
+
+  /** Rate applying to the last dollar of taxable income. */
+  function marginalRateAt(taxableCents, brackets) {
+    var taxable = Math.max(0, Math.round(Number(taxableCents) || 0));
+    if (!Array.isArray(brackets) || !brackets.length) return 0;
+
+    for (var i = brackets.length - 1; i >= 0; i -= 1) {
+      if (taxable > toCents(brackets[i].from)) return brackets[i].rate;
+    }
+    return brackets[0].rate;
+  }
+
+  /** Distinct rates that apply to income in (lowerCents, upperCents]. */
+  function ratesOnBand(lowerCents, upperCents, brackets) {
+    if (!Array.isArray(brackets) || !brackets.length) return [];
+    var lower = Math.max(0, Math.round(Number(lowerCents) || 0));
+    var upper = Math.max(0, Math.round(Number(upperCents) || 0));
+    if (upper <= lower) return [marginalRateAt(upper, brackets)];
+
+    var rates = [];
+    for (var i = 0; i < brackets.length; i += 1) {
+      var from = toCents(brackets[i].from);
+      var to = brackets[i].to === null || brackets[i].to === undefined
+        ? Number.POSITIVE_INFINITY
+        : toCents(brackets[i].to);
+      if (Math.min(upper, to) > Math.max(lower, from)) {
+        rates.push(brackets[i].rate);
+      }
+    }
+    return rates;
+  }
+
+  /**
+   * Tax effect of salary sacrifice versus taking the same amount as taxable pay.
+   * Net saving is income tax avoided minus the 15% contributions tax the fund pays.
+   */
+  function calculateTaxSaving(options) {
+    var brackets = options.brackets || [];
+    var concessionalRate = Number.isFinite(options.concessionalRate) ? options.concessionalRate : 0.15;
+    var sacrificeCents = nonNegative(options.sacrificeCents);
+    var taxableWithoutCents = Math.max(0, Math.round(Number(options.taxableIncomeCents) || 0));
+    var taxableWithCents = Math.max(0, taxableWithoutCents - sacrificeCents);
+    var selectedPerPayCents = nonNegative(options.selectedPerPayCents);
+
+    var incomeTaxWithoutCents = incomeTaxCents(taxableWithoutCents, brackets);
+    var incomeTaxWithCents = incomeTaxCents(taxableWithCents, brackets);
+    var incomeTaxAvoidedCents = incomeTaxWithoutCents - incomeTaxWithCents;
+    var contributionsTaxCents = Math.round(sacrificeCents * concessionalRate);
+    var netSavingCents = incomeTaxAvoidedCents - contributionsTaxCents;
+    var takeHomeReductionCents = sacrificeCents - incomeTaxAvoidedCents;
+    var effectiveIncomeTaxRate = sacrificeCents > 0 ? incomeTaxAvoidedCents / sacrificeCents : 0;
+    var perPayTakeHomeCents = Math.round(selectedPerPayCents * (1 - effectiveIncomeTaxRate));
+
+    return {
+      available: brackets.length > 0,
+      sacrificeCents: sacrificeCents,
+      taxableWithoutCents: taxableWithoutCents,
+      taxableWithCents: taxableWithCents,
+      incomeTaxWithoutCents: incomeTaxWithoutCents,
+      incomeTaxWithCents: incomeTaxWithCents,
+      incomeTaxAvoidedCents: incomeTaxAvoidedCents,
+      contributionsTaxCents: contributionsTaxCents,
+      concessionalRate: concessionalRate,
+      netSavingCents: netSavingCents,
+      takeHomeReductionCents: takeHomeReductionCents,
+      effectiveIncomeTaxRate: effectiveIncomeTaxRate,
+      marginalRate: marginalRateAt(taxableWithoutCents, brackets),
+      ratesOnSacrifice: ratesOnBand(taxableWithCents, taxableWithoutCents, brackets),
+      selectedPerPayCents: selectedPerPayCents,
+      perPayTakeHomeCents: perPayTakeHomeCents,
+      perPayIncomeTaxCents: selectedPerPayCents - perPayTakeHomeCents
+    };
+  }
+
+  /**
+   * A typical pay at the current salary rate — what lands in the bank before
+   * and after this salary sacrifice, so the take-home reduction has a scale.
+   * Bonus is left out: it is not part of regular pay.
+   */
+  function calculateTypicalPay(options) {
+    var pays = Math.max(1, Math.round(Number(options.paydayCount) || 0));
+    var salaryRateCents = nonNegative(options.salaryRateCents);
+    var brackets = options.brackets || [];
+    var selectedPerPayCents = nonNegative(options.selectedPerPayCents);
+    var perPayTakeHomeCents = nonNegative(options.perPayTakeHomeCents);
+
+    var annualTaxCents = incomeTaxCents(salaryRateCents, brackets);
+    var grossPerPayCents = Math.round(salaryRateCents / pays);
+    var taxPerPayCents = Math.round(annualTaxCents / pays);
+    var afterTaxPerPayCents = grossPerPayCents - taxPerPayCents;
+
+    return {
+      paydayCount: pays,
+      salaryRateCents: salaryRateCents,
+      annualTaxCents: annualTaxCents,
+      grossPerPayCents: grossPerPayCents,
+      taxPerPayCents: taxPerPayCents,
+      afterTaxPerPayCents: afterTaxPerPayCents,
+      sacrificeFromTakeHomeCents: perPayTakeHomeCents,
+      afterSacrificePerPayCents: afterTaxPerPayCents - perPayTakeHomeCents,
+      selectedPerPayCents: selectedPerPayCents
+    };
+  }
+
+  function joinList(items) {
+    if (!items.length) return '';
+    if (items.length === 1) return items[0];
+    if (items.length === 2) return items[0] + ' and ' + items[1];
+    return items.slice(0, -1).join(', ') + ' and ' + items[items.length - 1];
+  }
+
+  function formatBracketLabel(rate) {
+    if (rate === 0) return 'the tax-free threshold';
+    return 'the ' + formatPercent(rate, 0) + ' bracket';
+  }
+
+  /** "the 37% bracket" or "the 30% and 37% brackets". */
+  function formatRatePhrase(rates) {
+    if (!rates || !rates.length) return '';
+    if (rates.length === 1) return formatBracketLabel(rates[0]);
+    if (rates.every(function (rate) { return rate > 0; })) {
+      return 'the ' + joinList(rates.map(function (rate) {
+        return formatPercent(rate, 0);
+      })) + ' brackets';
+    }
+    return joinList(rates.map(formatBracketLabel));
+  }
+
   // ───────────────────────────────────────────────────────────── issues ──
 
   function issue(level, code, title, message, placement) {
@@ -576,6 +726,7 @@ window.SuperCapCalc = (function () {
     var supplied = overrides || {};
 
     var sourceSuper = (year && year.super) || {};
+    var sourceTax = (year && year.tax) || {};
     var capFromData = Number.isFinite(sourceSuper.concessionalCap) ? toCents(sourceSuper.concessionalCap) : null;
     var baseFromData = Number.isFinite(sourceSuper.maximumSgEarningsBase)
       ? toCents(sourceSuper.maximumSgEarningsBase)
@@ -605,6 +756,10 @@ window.SuperCapCalc = (function () {
       maxBaseCents: manualBase !== null ? manualBase : baseFromData,
       maxBaseIsManual: manualBase !== null && baseFromData === null,
       division293ThresholdCents: thresholdFromData,
+      residentRates: Array.isArray(sourceTax.residentRates) ? sourceTax.residentRates : [],
+      concessionalContributionsRate: Number.isFinite(sourceTax.concessionalContributionsRate)
+        ? sourceTax.concessionalContributionsRate
+        : 0.15,
       defaults: (year && year.defaults) || {},
       metadata: (year && year.metadata) || {}
     };
@@ -1065,6 +1220,28 @@ window.SuperCapCalc = (function () {
       alreadyOverCap: capState.alreadyOverCap
     });
 
+    // ── estimated tax saving ──
+    var taxableIncomeCents = Math.max(
+      0,
+      salary.totalCents + (bonusInYear ? bonusCents : 0) - personalDeductibleCents
+    );
+    var taxSaving = calculateTaxSaving({
+      taxableIncomeCents: taxableIncomeCents,
+      sacrificeCents: existingSacrificeCents + projection.futureSacrificeCents,
+      selectedPerPayCents: selectedPerPayCents,
+      brackets: rules.residentRates,
+      concessionalRate: rules.concessionalContributionsRate
+    });
+
+    var salaryRateCents = state.salary.hasIncrease ? nonNegative(state.salary.afterCents) : nonNegative(state.salary.beforeCents);
+    var typicalPay = calculateTypicalPay({
+      salaryRateCents: salaryRateCents,
+      paydayCount: paydays.length,
+      brackets: rules.residentRates,
+      selectedPerPayCents: selectedPerPayCents,
+      perPayTakeHomeCents: taxSaving.perPayTakeHomeCents
+    });
+
     // ── Division 293 ──
     var incomeProxyCents = salary.totalCents + (bonusInYear ? bonusCents : 0) + projection.projectedTotalCents;
     var division293Applies =
@@ -1141,7 +1318,8 @@ window.SuperCapCalc = (function () {
         capIsOverridden: rules.capIsOverridden,
         maxBaseCents: rules.maxBaseCents,
         maxBaseKnown: Number.isFinite(rules.maxBaseCents),
-        division293ThresholdCents: rules.division293ThresholdCents
+        division293ThresholdCents: rules.division293ThresholdCents,
+        concessionalContributionsRate: rules.concessionalContributionsRate
       },
 
       asAtDate: asAtDate,
@@ -1232,6 +1410,8 @@ window.SuperCapCalc = (function () {
 
       projection: projection,
       meter: meter,
+      taxSaving: taxSaving,
+      typicalPay: typicalPay,
 
       division293: {
         applies: division293Applies,
@@ -1411,7 +1591,68 @@ window.SuperCapCalc = (function () {
     }
 
     sentences.push(describeStatus(result));
+
+    var tax = result.taxSaving;
+    if (tax && tax.available && tax.sacrificeCents > 0) {
+      var ratePhrase = formatRatePhrase(tax.ratesOnSacrifice);
+      var taxSentence =
+        'Salary sacrifice this year is ' +
+        formatCurrency(tax.sacrificeCents) +
+        '. After tax, the take-home impact is about ' +
+        formatCurrency(tax.takeHomeReductionCents) +
+        '.';
+      if (ratePhrase) {
+        taxSentence += ' At ' + ratePhrase + ', the rest is estimated income tax you would have paid.';
+      } else {
+        taxSentence += ' The rest is estimated income tax you would have paid.';
+      }
+      if (tax.netSavingCents > 0) {
+        taxSentence +=
+          ' After the 15% contributions tax in the fund, that is an estimated tax saving of ' +
+          formatCurrency(tax.netSavingCents) +
+          '.';
+      }
+      sentences.push(taxSentence);
+    }
+
     return sentences.join(' ');
+  }
+
+  /**
+   * Copy for the green take-home callout. Null when there is nothing useful to show.
+   */
+  function describeTakeHomeImpact(result) {
+    var tax = result && result.taxSaving;
+    var typical = result && result.typicalPay;
+    if (!tax || !tax.available || tax.selectedPerPayCents <= 0 || tax.sacrificeCents <= 0) {
+      return null;
+    }
+
+    var cadence = (result.payroll && result.payroll.cadence) || payCadence('fortnightly');
+    var ratePhrase = formatRatePhrase(tax.ratesOnSacrifice);
+    var note;
+    if (tax.netSavingCents > 0) {
+      note =
+        (ratePhrase ? 'At ' + ratePhrase + ', t' : 'T') +
+        'he rest is an estimated tax saving — not money you lose from your pay.';
+    } else if (tax.incomeTaxAvoidedCents > 0) {
+      note =
+        (ratePhrase ? 'At ' + ratePhrase + ', t' : 'T') +
+        'he income tax you would have paid is about the same as the 15% contributions tax in the fund, so there is little estimated tax advantage.';
+    } else {
+      note =
+        (ratePhrase ? 'At ' + ratePhrase + ' t' : 'T') +
+        'here is no estimated income-tax saving, and the fund still pays 15% contributions tax.';
+    }
+
+    return {
+      lessLabel: formatCurrency(tax.perPayTakeHomeCents),
+      lessUnit: 'less take-home ' + cadence.per,
+      typicalLabel: typical ? formatCurrency(typical.afterSacrificePerPayCents) : '',
+      typicalUnit: 'typical take-home ' + cadence.per,
+      afterTaxLabel: typical ? formatCurrency(typical.afterTaxPerPayCents) : '',
+      note: note
+    };
   }
 
   return {
@@ -1460,6 +1701,9 @@ window.SuperCapCalc = (function () {
     calculateRecommendation: calculateRecommendation,
     calculateSliderMax: calculateSliderMax,
     calculateSliderProjection: calculateSliderProjection,
+    incomeTaxCents: incomeTaxCents,
+    calculateTaxSaving: calculateTaxSaving,
+    calculateTypicalPay: calculateTypicalPay,
     resolveRules: resolveRules,
 
     // pipeline
@@ -1467,6 +1711,7 @@ window.SuperCapCalc = (function () {
     chooseFinancialYear: chooseFinancialYear,
     calculate: calculate,
     describeStatus: describeStatus,
+    describeTakeHomeImpact: describeTakeHomeImpact,
     explainResult: explainResult,
     statusLabel: function (status) {
       return STATUS_LABELS[status] || '';

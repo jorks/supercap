@@ -123,9 +123,11 @@ projection, and the FY2026-27 fixture from the brief.
   cap manually.
 - **Division 293 is flagged, not calculated.** If your income and contributions look like
   they cross the threshold, SuperCap tells you to check, and stops there.
-- **No Medicare levy, HELP debt, offsets or take-home pay modelling.** SuperCap answers one
-  question (how much to sacrifice per pay) and deliberately does not become a general
-  tax calculator.
+- **A limited tax estimate, not a tax calculator.** SuperCap estimates the income-tax
+  effect of salary sacrifice using resident rates and the 15% contributions tax, so it
+  can show that sacrificing $200 in the 37% bracket only reduces take-home by about
+  $126. It does not model Medicare levy, HELP debt, offsets, Division 293 amounts or
+  other income.
 - **Your employer's payroll is the source of truth.** Their pay dates, cut-offs and
   rounding will differ slightly from any model. That is what the safety buffer is for.
 

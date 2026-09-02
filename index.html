@@ -426,10 +426,19 @@
         </div>
 
         <div class="readout">
-          <p class="readout__value">
-            <span class="readout__currency" data-region="readout-currency" aria-hidden="true">$</span><span data-field="recommended-amount">0</span>
-          </p>
-          <p class="readout__unit" data-region="readout-unit" data-field="readout-unit">/ fortnight</p>
+          <div class="readout__main">
+            <p class="readout__value">
+              <span class="readout__currency" data-region="readout-currency" aria-hidden="true">$</span><span data-field="recommended-amount">0</span>
+            </p>
+            <p class="readout__unit" data-region="readout-unit" data-field="readout-unit">/ fortnight</p>
+          </div>
+          <div class="readout__saving is-hidden" data-region="readout-saving">
+            <p class="readout__impact">
+              <span class="readout__saving-value" data-field="takehome-amount">$0</span>
+              <span class="readout__saving-unit" data-field="takehome-unit">less take-home per fortnight</span>
+            </p>
+            <button type="button" class="takehome__more" data-action="scroll-take-home">See breakdown</button>
+          </div>
         </div>
 
         <p class="readout__meta">
@@ -446,6 +455,7 @@
         </div>
 
         <div class="sacrifice" data-region="sacrifice">
+          <h3 class="eyebrow eyebrow--quiet">Adjust this amount</h3>
           <div class="sacrifice__head">
             <label class="field__label" for="in-slider" data-field="slider-label">Salary sacrifice per fortnight</label>
             <span class="money-input money-input--compact">
@@ -455,17 +465,17 @@
           </div>
 
           <div class="slider">
-            <div class="slider__annotation" data-region="slider-marker">
-              <span class="annotation" data-field="marker-label">recommended</span>
-            </div>
             <div class="slider__track-wrap">
-              <div class="slider__marker" data-region="marker-tick" aria-hidden="true"></div>
+              <div class="slider__mark is-hidden" data-region="slider-marker">
+                <span class="annotation" data-field="marker-label">recommended</span>
+                <span class="slider__marker" aria-hidden="true"></span>
+              </div>
               <input type="range" class="slider__input" id="in-slider" min="0" max="25000" step="100" value="0"
                      aria-describedby="slider-status">
             </div>
             <div class="slider__scale">
               <span data-field="slider-min">$0</span>
-              <button type="button" class="button button--utility" data-action="reset-slider">
+              <button type="button" class="button button--utility" data-action="reset-slider" data-region="reset-slider">
                 <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-undo"/></svg>
                 Reset to recommendation
               </button>
@@ -503,7 +513,7 @@
 
         <div class="meter" data-region="meter">
           <div class="meter__head">
-            <h3 class="eyebrow eyebrow--quiet">Projected concessional contributions</h3>
+            <h3 class="eyebrow eyebrow--quiet">Against the cap this year</h3>
             <p class="meter__figure">
               <span data-field="meter-total">$0</span>
               <span class="meter__of">of</span>
@@ -536,7 +546,19 @@
     </div>
 
     <div class="ledger__layout">
-      <dl class="ledger__rows" data-region="breakdown"></dl>
+      <div class="ledger__stack">
+        <section class="paypacket is-hidden" id="take-home" tabindex="-1" data-region="paypacket" aria-labelledby="h-take-home">
+          <h3 class="subhead" id="h-take-home">Your typical pay</h3>
+          <p class="paypacket__lead" data-field="paypacket-lead"></p>
+          <dl class="ledger__rows" data-region="paypacket-rows"></dl>
+          <p class="note" data-field="paypacket-note"></p>
+        </section>
+
+        <section aria-labelledby="h-super-year">
+          <h3 class="subhead" id="h-super-year">Super this year</h3>
+          <dl class="ledger__rows" data-region="breakdown"></dl>
+        </section>
+      </div>
       <p class="explanation" data-field="explanation"></p>
     </div>
   </section>
@@ -672,6 +694,12 @@
         <dt>Safety buffer and rounding</dt>
         <dd>The recommendation is rounded down to a whole dollar after subtracting your buffer, so rounding can never push you past your target.</dd>
 
+        <dt>Estimated tax saving</dt>
+        <dd>Compared with taking the same salary-sacrifice amount as taxable pay. SuperCap applies resident income-tax rates to your projected salary and bonus, then subtracts the 15% contributions tax the fund pays. That is why sacrificing $200 in the 37% bracket only reduces take-home by about $126 — the rest is tax you would have paid. Medicare levy, HELP, offsets, Division 293 and other income are not included. This is an estimate, not tax advice.</dd>
+
+        <dt>Typical pay</dt>
+        <dd>Your regular pay before tax, after tax and after this salary sacrifice, at the current salary rate and pay cycle. The first two figures are the pairing that matters: the salary-sacrifice amount you elect, then the after-tax take-home impact, which is smaller because some of the sacrifice is income tax you would have paid. SuperCap divides that annual salary and estimated resident income tax across the pays it counted in the year. Bonus is left out of this typical-pay picture because it is not regular pay. The annual tax-saving figure still includes bonus income.</dd>
+
         <dt>Actual figures</dt>
         <dd>When actual fund figures are switched on, amounts received up to your calculation date come from what you entered, and the remainder of the year stays a SuperCap estimate.</dd>
 
@@ -696,7 +724,7 @@
   </details>
 
   <footer class="disclaimer">
-    <p><strong>SuperCap provides estimates for Australian salary sacrifice planning and is not financial or tax advice.</strong></p>
+    <p><strong>SuperCap provides estimates for Australian salary sacrifice planning and is not financial or tax advice.</strong> Estimated tax savings use resident income-tax rates and the 15% concessional contributions tax only.</p>
     <p>Employer payroll calculations, employment arrangements, contribution timing, bonus treatment and the date contributions are received by your super fund can all affect your actual concessional contributions. Check your actual contributions with your super fund and the ATO before making a final year-end contribution.</p>
     <p class="disclaimer__meta">
       <span data-field="footer-version"></span>

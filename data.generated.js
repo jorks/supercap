@@ -52,6 +52,7 @@ window.SUPERCAP_DATA = {
         "division293Threshold": 250000
       },
       "tax": {
+        "concessionalContributionsRate": 0.15,
         "residentRates": [
           {
             "from": 0,
@@ -103,6 +104,7 @@ window.SUPERCAP_DATA = {
         "division293Threshold": 250000
       },
       "tax": {
+        "concessionalContributionsRate": 0.15,
         "residentRates": [
           {
             "from": 0,
@@ -154,6 +156,7 @@ window.SUPERCAP_DATA = {
         "division293Threshold": 250000
       },
       "tax": {
+        "concessionalContributionsRate": 0.15,
         "residentRates": [
           {
             "from": 0,
@@ -205,6 +208,7 @@ window.SUPERCAP_DATA = {
         "division293Threshold": 250000
       },
       "tax": {
+        "concessionalContributionsRate": 0.15,
         "residentRates": [
           {
             "from": 0,

@@ -248,6 +248,7 @@
     bindBuffer();
     bindEmail();
     bindActions();
+    window.addEventListener('resize', positionSliderMarker);
     render();
   }
 
@@ -635,7 +636,8 @@
         },
         print: function () {
           window.print();
-        }
+        },
+        'scroll-take-home': scrollToTakeHome
       };
 
       var handler = actions[trigger.dataset.action];
@@ -1141,6 +1143,20 @@
         ? Calc.formatDateShort(result.payroll.firstDeduction) + ' → ' + Calc.formatDateShort(result.payroll.lastDeduction)
         : 'No pays left in ' + result.financialYear.shortLabel
     );
+
+    var takeHome = result.hasBlockingIssue ? null : Calc.describeTakeHomeImpact(result);
+    show(region('readout-saving'), Boolean(takeHome));
+    if (takeHome) {
+      setText('takehome-amount', takeHome.lessLabel);
+      setText('takehome-unit', takeHome.lessUnit);
+    }
+  }
+
+  function scrollToTakeHome() {
+    var target = document.getElementById('take-home');
+    if (!target || target.classList.contains('is-hidden')) return;
+    target.scrollIntoView({ block: 'start', behavior: 'smooth' });
+    if (typeof target.focus === 'function') target.focus({ preventScroll: true });
   }
 
   function renderBlockedState() {
@@ -1156,6 +1172,7 @@
     show(region('sacrifice'), !blocked);
     show(region('meter'), !blocked);
     show(region('status'), !blocked);
+    if (blocked) show(region('readout-saving'), false);
 
     if (blocked && blocker) {
       setText('blocked-title', blocker.title);
@@ -1185,21 +1202,50 @@
     setText('slider-min', '$0');
     setText('slider-max', money(maximum));
 
-    var recommended = result.recommendation.practicalPerPayCents;
-    var hasMarker = recommended > 0 && recommended <= maximum;
-
-    show(region('marker-tick'), hasMarker);
-    show(region('slider-marker'), hasMarker);
-
-    if (hasMarker) {
-      // Nudge the annotation away from the ends so it cannot spill outside the card.
-      var markerPercent = percentOf(recommended, maximum);
-      region('marker-tick').style.left = markerPercent + '%';
-      region('slider-marker').style.left = Math.min(88, Math.max(12, markerPercent)) + '%';
-      setText('marker-label', 'recommended');
-    }
-
+    positionSliderMarker();
     renderExactTarget();
+    var reset = region('reset-slider');
+    var atRecommendation =
+      result.projection.selectedPerPayCents === result.recommendation.practicalPerPayCents;
+    if (reset) {
+      reset.disabled = atRecommendation;
+      reset.setAttribute(
+        'aria-label',
+        atRecommendation ? 'Slider is at the recommendation' : 'Reset slider to recommendation'
+      );
+    }
+  }
+
+  /**
+   * Place the recommended mark on the same path the range thumb travels:
+   * half a thumb in, then across (width - thumb). Measure the input, not the
+   * wrapper, so the label, tick and handle share one centre.
+   */
+  function positionSliderMarker() {
+    var mark = region('slider-marker');
+    var slider = document.getElementById('in-slider');
+    var wrap = slider && slider.parentElement;
+    if (!mark || !slider || !wrap || !result || result.hasBlockingIssue) return;
+
+    var recommended = result.recommendation.practicalPerPayCents;
+    var maximum = result.slider.maxCents;
+    var awayFromRecommendation =
+      result.projection.selectedPerPayCents !== recommended;
+    var hasMarker = awayFromRecommendation && recommended > 0 && recommended <= maximum;
+
+    show(mark, hasMarker);
+    if (!hasMarker) return;
+
+    setText('marker-label', 'recommended');
+
+    var thumb = 22;
+    var wrapBox = wrap.getBoundingClientRect();
+    var sliderBox = slider.getBoundingClientRect();
+    var travel = Math.max(0, sliderBox.width - thumb);
+    var centre =
+      sliderBox.left - wrapBox.left + thumb / 2 + (recommended / maximum) * travel;
+
+    mark.style.left = centre + 'px';
   }
 
   function renderExactTarget() {
@@ -1439,6 +1485,13 @@
         : { label: 'Remaining', cents: result.projection.headroomCents, kind: 'total' }
     );
 
+    fillLedger(list, rows);
+    renderPayPacket();
+    setText('explanation', Calc.explainResult(result));
+  }
+
+  function fillLedger(list, rows) {
+    if (!list) return;
     rows.forEach(function (row) {
       if (row.omitWhenZero && row.cents === 0) return;
       var node = template('tpl-ledger-row');
@@ -1448,8 +1501,74 @@
       node.querySelector('.ledger__value').textContent = money(row.cents, 2);
       list.appendChild(node);
     });
+  }
 
-    setText('explanation', Calc.explainResult(result));
+  function renderPayPacket() {
+    var packet = region('paypacket');
+    var rows = region('paypacket-rows');
+    var typical = result.typicalPay;
+    var tax = result.taxSaving;
+    var copy = Calc.describeTakeHomeImpact(result);
+    var showPacket =
+      !result.hasBlockingIssue &&
+      typical &&
+      typical.salaryRateCents > 0 &&
+      typical.paydayCount > 0 &&
+      tax &&
+      tax.available;
+
+    show(packet, showPacket);
+    if (!rows) return;
+    clear(rows);
+    if (!showPacket) return;
+
+    var cadence = result.payroll.cadence;
+    setText(
+      'paypacket-lead',
+      'Estimated ' +
+        cadence.adjective +
+        ' figures at your ' +
+        money(typical.salaryRateCents) +
+        ' salary, across ' +
+        typical.paydayCount +
+        ' pays this year. Bonus is not included here.'
+    );
+
+    fillLedger(rows, [
+      {
+        label: 'Salary sacrifice ' + cadence.per,
+        cents: typical.selectedPerPayCents,
+        kind: 'compare'
+      },
+      {
+        label: 'After-tax take-home impact',
+        cents: typical.sacrificeFromTakeHomeCents,
+        kind: 'impact'
+      },
+      { label: 'Before tax', cents: typical.grossPerPayCents },
+      { label: 'After tax', cents: typical.afterTaxPerPayCents },
+      {
+        label: 'Take-home after sacrifice',
+        cents: typical.afterSacrificePerPayCents,
+        kind: 'result'
+      }
+    ]);
+
+    if (tax.sacrificeCents > 0 && tax.netSavingCents > 0) {
+      fillLedger(rows, [
+        {
+          label: 'Estimated tax saving this year',
+          cents: tax.netSavingCents,
+          kind: 'saving'
+        }
+      ]);
+    }
+
+    setText(
+      'paypacket-note',
+      (copy && copy.note ? copy.note + ' ' : '') +
+        'Medicare levy, HELP, offsets and other income are not included. This is an estimate, not tax advice.'
+    );
   }
 
   function renderSchedule() {

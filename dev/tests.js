@@ -914,6 +914,111 @@ window.SuperCapTests = (function () {
     });
   });
 
+  // ─────────────────────────────────────────────────────────────── tax ──
+
+  describe('Income tax and estimated tax saving', function () {
+    var fy27 = DATA.financialYears['2026-27'].tax.residentRates;
+
+    it('applies FY2026-27 resident brackets in cents', function () {
+      equal(Calc.incomeTaxCents(10000000, fy27), 2052000, '$100,000 → $20,520');
+      equal(Calc.incomeTaxCents(20000000, fy27), 5587000, '$200,000 → $55,870');
+      equal(Calc.incomeTaxCents(0, fy27), 0);
+      equal(Calc.incomeTaxCents(1820000, fy27), 0, 'tax-free threshold');
+    });
+
+    it('treats a $200 sacrifice in the 37% bracket as $126 less take-home', function () {
+      var saving = Calc.calculateTaxSaving({
+        taxableIncomeCents: 16000000,
+        sacrificeCents: 2000000,
+        selectedPerPayCents: 20000,
+        brackets: fy27,
+        concessionalRate: 0.15
+      });
+      equal(saving.incomeTaxAvoidedCents, 740000, '37% of $20,000');
+      equal(saving.takeHomeReductionCents, 1260000, '$12,600 of a $20,000 sacrifice');
+      equal(saving.perPayTakeHomeCents, 12600, '$126 of each $200');
+      equal(saving.perPayIncomeTaxCents, 7400);
+      equal(saving.contributionsTaxCents, 300000);
+      equal(saving.netSavingCents, 440000, '37% minus 15%');
+      deepEqual(saving.ratesOnSacrifice, [0.37]);
+    });
+
+    it('uses the actual tax difference when sacrifice crosses a bracket', function () {
+      var saving = Calc.calculateTaxSaving({
+        taxableIncomeCents: 14000000,
+        sacrificeCents: 1000000,
+        selectedPerPayCents: 0,
+        brackets: fy27,
+        concessionalRate: 0.15
+      });
+      equal(saving.incomeTaxAvoidedCents, 335000, '$5,000 at 37% and $5,000 at 30%');
+      deepEqual(saving.ratesOnSacrifice, [0.3, 0.37]);
+    });
+
+    it('reports no net saving when income tax avoided equals the 15% fund tax', function () {
+      var saving = Calc.calculateTaxSaving({
+        taxableIncomeCents: 4000000,
+        sacrificeCents: 500000,
+        selectedPerPayCents: 50000,
+        brackets: fy27,
+        concessionalRate: 0.15
+      });
+      equal(saving.incomeTaxAvoidedCents, 75000);
+      equal(saving.netSavingCents, 0);
+    });
+
+    it('returns zeros when nothing is being sacrificed', function () {
+      var saving = Calc.calculateTaxSaving({
+        taxableIncomeCents: 16000000,
+        sacrificeCents: 0,
+        selectedPerPayCents: 0,
+        brackets: fy27,
+        concessionalRate: 0.15
+      });
+      equal(saving.incomeTaxAvoidedCents, 0);
+      equal(saving.netSavingCents, 0);
+      equal(saving.takeHomeReductionCents, 0);
+    });
+
+    it('uses all salary sacrifice this year on the live result', function () {
+      var result = run();
+      equal(
+        result.taxSaving.sacrificeCents,
+        result.existing.cents + result.projection.futureSacrificeCents
+      );
+      assert(result.taxSaving.netSavingCents > 0, 'the fixture earner should have a net saving');
+      assert(
+        result.taxSaving.takeHomeReductionCents < result.taxSaving.sacrificeCents,
+        'take-home should fall by less than the amount sacrificed'
+      );
+    });
+
+    it('describes the take-home impact in the 37% or 45% language the UI uses', function () {
+      var copy = Calc.describeTakeHomeImpact(run());
+      assert(copy, 'the fixture should produce take-home copy');
+      assert(copy.lessLabel.indexOf('$') === 0, 'less amount is a currency string');
+      assert(copy.lessUnit.indexOf('less take-home') > -1);
+      assert(copy.typicalLabel.indexOf('$') === 0, 'typical take-home is a currency string');
+      assert(copy.typicalUnit.indexOf('typical take-home') > -1);
+      assert(copy.note.indexOf('estimated tax saving') > -1);
+      assert(copy.note.indexOf('bracket') > -1);
+    });
+
+    it('scales a typical pay from the current salary and the year\'s payday count', function () {
+      var typical = Calc.calculateTypicalPay({
+        salaryRateCents: 15500000,
+        paydayCount: 52,
+        brackets: fy27,
+        selectedPerPayCents: 28600,
+        perPayTakeHomeCents: 18000
+      });
+      equal(typical.grossPerPayCents, Math.round(15500000 / 52));
+      equal(typical.taxPerPayCents, Math.round(Calc.incomeTaxCents(15500000, fy27) / 52));
+      equal(typical.afterTaxPerPayCents, typical.grossPerPayCents - typical.taxPerPayCents);
+      equal(typical.afterSacrificePerPayCents, typical.afterTaxPerPayCents - 18000);
+    });
+  });
+
   // ────────────────────────────────────────────────────────── narrative ──
 
   describe('Narrative', function () {
@@ -922,6 +1027,8 @@ window.SuperCapTests = (function () {
       assert(text.indexOf('$27,996') > -1, 'employer total');
       assert(text.indexOf('$3,000') > -1, 'bonus super');
       assert(text.indexOf('21 remaining') > -1, 'remaining pays');
+      assert(text.indexOf('Salary sacrifice this year') > -1, 'annual sacrifice amount is stated');
+      assert(text.indexOf('After tax, the take-home impact') > -1, 'after-tax take-home impact is stated');
       assert(text.indexOf('NaN') === -1 && text.indexOf('undefined') === -1, 'no placeholder leakage');
     });
 
@@ -981,6 +1088,7 @@ window.SuperCapTests = (function () {
         for (var i = 1; i < brackets.length; i += 1) {
           equal(brackets[i].from, brackets[i - 1].to, key + ' bracket ' + i + ' must be continuous');
         }
+        equal(DATA.financialYears[key].tax.concessionalContributionsRate, 0.15, key + ' fund tax');
       });
       equal(DATA.financialYears['2026-27'].tax.residentRates[1].rate, 0.15);
       equal(DATA.financialYears['2027-28'].tax.residentRates[1].rate, 0.14);

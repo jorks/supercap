@@ -48,6 +48,7 @@
       },
 
       "tax": {
+        "concessionalContributionsRate": 0.15,
         "residentRates": [
           { "from": 0, "to": 18200, "rate": 0 },
           { "from": 18200, "to": 45000, "rate": 0.15 },
@@ -84,6 +85,7 @@
       },
 
       "tax": {
+        "concessionalContributionsRate": 0.15,
         "residentRates": [
           { "from": 0, "to": 18200, "rate": 0 },
           { "from": 18200, "to": 45000, "rate": 0.14 },
@@ -120,6 +122,7 @@
       },
 
       "tax": {
+        "concessionalContributionsRate": 0.15,
         "residentRates": [
           { "from": 0, "to": 18200, "rate": 0 },
           { "from": 18200, "to": 45000, "rate": 0.14 },
@@ -156,6 +159,7 @@
       },
 
       "tax": {
+        "concessionalContributionsRate": 0.15,
         "residentRates": [
           { "from": 0, "to": 18200, "rate": 0 },
           { "from": 18200, "to": 45000, "rate": 0.14 },
