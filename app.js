@@ -1437,8 +1437,10 @@
 
   function renderStatus() {
     var arrangement = region('carry-forward-arrangement');
+    var carryHint = region('carry-forward-hint');
     if (result.hasBlockingIssue) {
       show(arrangement, false);
+      show(carryHint, false);
       return;
     }
 
@@ -1458,6 +1460,11 @@
     show(
       arrangement,
       projection.carryForwardUsedCents > 0 && projection.selectedPerPayCents > 0
+    );
+    show(
+      carryHint,
+      result.usage.carryForwardCents === 0 &&
+        (projection.status === 'over' || projection.status === 'exceeded')
     );
   }
 

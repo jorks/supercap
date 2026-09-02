@@ -1586,6 +1586,31 @@ select.control {
   grid-column: 2;
 }
 
+.carry-hint {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 10px;
+  padding: 10px 12px;
+  border: 1px solid #dde5ea;
+  border-radius: var(--r-control);
+  background: #f4f7f9;
+  color: var(--ink-soft);
+  font-size: 0.79rem;
+  line-height: 1.5;
+}
+
+.carry-hint .icon {
+  flex: 0 0 auto;
+  margin-top: 2px;
+  color: var(--slate);
+}
+
+.carry-hint strong {
+  color: var(--ink);
+  font-weight: 640;
+}
+
 /* ────────────────────────────────────────────────────────────── infobox ── */
 
 .infobox {
