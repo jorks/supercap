@@ -29,9 +29,6 @@
   <symbol id="i-copy" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
     <rect x="7" y="7" width="9.5" height="9.5" rx="2"/><path d="M13 4.5H5.5a2 2 0 0 0-2 2V13"/>
   </symbol>
-  <symbol id="i-mail" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-    <rect x="2.5" y="4.5" width="15" height="11" rx="2"/><path d="m3 6 7 5 7-5"/>
-  </symbol>
   <symbol id="i-undo" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
     <path d="M3.5 6.5v4h4"/><path d="M4 10.5a6.2 6.2 0 1 1 1.8 4.6"/>
   </symbol>
@@ -598,10 +595,6 @@
         <label class="field__label" for="in-email-name">Your name</label>
         <input class="control" type="text" id="in-email-name" placeholder="Optional" autocomplete="name">
       </p>
-      <p class="field">
-        <label class="field__label" for="in-email-to">Send to</label>
-        <input class="control" type="email" id="in-email-to" placeholder="Payroll email address" autocomplete="off" spellcheck="false">
-      </p>
       <p class="field field--full is-hidden" data-region="email-amount-reset">
         <button type="button" class="button button--utility button--inline" data-action="reset-email-amount">
           <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-undo"/></svg>
@@ -617,12 +610,6 @@
         <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-copy"/></svg>
         Copy email
       </button>
-      <button type="button" class="button button--secondary" data-action="open-email">
-        <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-mail"/></svg>
-        Open in email app
-      </button>
-      <button type="button" class="button button--secondary" data-action="copy-amount">Copy amount</button>
-      <button type="button" class="button button--utility" data-action="regenerate-email">Regenerate</button>
       <span class="toast" data-region="toast" role="status" aria-live="polite"></span>
     </div>
       </div>

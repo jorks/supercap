@@ -171,7 +171,6 @@
       amountCents: null, // null follows the slider
       frequency: 'fortnightly',
       effectiveDate: null, // null follows the calculator
-      recipient: '',
       name: '',
       subject: 'Salary sacrifice superannuation change',
       body: '',
@@ -496,7 +495,6 @@
     var frequency = document.getElementById('in-email-frequency');
     var effective = document.getElementById('in-email-effective');
     var name = document.getElementById('in-email-name');
-    var recipient = document.getElementById('in-email-to');
     var subject = document.getElementById('in-email-subject');
     var body = document.getElementById('in-email-body');
 
@@ -530,12 +528,6 @@
       email.name = name.value;
       regenerateEmail();
       render();
-      save();
-    });
-
-    recipient.addEventListener('input', function () {
-      email.recipient = recipient.value;
-      renderEmailHeader();
       save();
     });
 
@@ -617,15 +609,7 @@
         'reset-anchor': resetAnchor,
         'reset-slider': resetSlider,
         'reset-email-amount': resetEmailAmount,
-        'regenerate-email': function () {
-          regenerateEmail(true);
-          render();
-          save();
-          toast('Email regenerated');
-        },
         'copy-email': copyEmail,
-        'copy-amount': copyAmount,
-        'open-email': openEmail,
         'step-next': goNext,
         'step-back': goBack,
         'skip-bonus': skipBonus,
@@ -787,17 +771,12 @@
   }
 
   function copyEmail() {
-    var text = 'Subject: ' + email.subject + '\n\n' + email.body;
-    copyToClipboard(text, 'Email copied');
-  }
-
-  function copyAmount() {
-    copyToClipboard(Calc.formatAmount(emailAmountCents()), 'Amount copied');
+    copyToClipboard(email.body, 'Copied');
   }
 
   /**
    * The Clipboard API is unavailable in some browsers when a page is opened from
-   * file://, so a selection-based fallback keeps the copy buttons working offline.
+   * file://, so a selection-based fallback keeps copy working offline.
    */
   function copyToClipboard(text, message) {
     if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -833,17 +812,6 @@
     toast(copied ? message : 'Press Ctrl/Cmd + C to copy');
   }
 
-  function openEmail() {
-    var url =
-      'mailto:' +
-      encodeURIComponent(email.recipient.trim()) +
-      '?subject=' +
-      encodeURIComponent(email.subject) +
-      '&body=' +
-      encodeURIComponent(email.body);
-    window.location.href = url;
-  }
-
   function toast(message) {
     var element = region('toast');
     element.textContent = message;
@@ -872,7 +840,6 @@
     renderBreakdown();
     renderSchedule();
     renderEmailControls();
-    renderEmailHeader();
     renderProvenance();
     renderJourney();
   }
@@ -1637,7 +1604,6 @@
     writeInput(document.getElementById('in-email-amount'), emailAmountCents());
     document.getElementById('in-email-frequency').value = email.frequency;
     document.getElementById('in-email-name').value = email.name;
-    document.getElementById('in-email-to').value = email.recipient;
 
     var subject = document.getElementById('in-email-subject');
     if (document.activeElement !== subject) subject.value = email.subject;
@@ -1648,11 +1614,6 @@
     var overridden = email.amountCents !== null;
     show(field('custom-amount-badge'), overridden);
     show(region('email-amount-reset'), overridden);
-  }
-
-  function renderEmailHeader() {
-    var recipient = email.recipient.trim();
-    setText('letter-to', recipient || 'Payroll');
   }
 
   function renderProvenance() {
