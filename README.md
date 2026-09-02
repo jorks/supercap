@@ -17,8 +17,10 @@ Double-clicking the file works. So does dragging it onto a browser window. It ru
 
 ## Privacy
 
-Nothing leaves your browser. There is no analytics, no telemetry and no network request
-of any kind. The page loads only its own files.
+SuperCap may use light analytics from Google or Cloudflare to understand site traffic,
+such as page views and broad geography. These analytics do not track, collect or
+receive anything you enter into the calculator. Your calculator data stays in your
+browser.
 
 Your figures are saved to `localStorage` so the page remembers them when you come back.
 "Reset all data" in the header clears that immediately. If you would rather it never
