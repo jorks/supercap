@@ -38,6 +38,18 @@
   <symbol id="i-arrow" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
     <path d="M4.5 10h11"/><path d="m11 5.5 4.5 4.5L11 14.5"/>
   </symbol>
+  <symbol id="i-shield" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M10 2.2 16 4.5v4.7c0 3.9-2.4 6.8-6 8.6-3.6-1.8-6-4.7-6-8.6V4.5Z"/><path d="m7.1 9.9 1.8 1.8 4-4.1"/>
+  </symbol>
+  <symbol id="i-github" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M12 .7a11.5 11.5 0 0 0-3.6 22.4c.6.1.8-.2.8-.5v-2.2c-3.3.7-4-1.4-4-1.4-.5-1.4-1.3-1.7-1.3-1.7-1.1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1.1 1.8 2.8 1.3 3.5 1 .1-.8.4-1.3.8-1.6-2.7-.3-5.5-1.3-5.5-5.7 0-1.3.5-2.3 1.2-3.1-.1-.3-.5-1.5.1-3.1 0 0 1-.3 3.2 1.2a11 11 0 0 1 5.8 0c2.2-1.5 3.2-1.2 3.2-1.2.6 1.6.2 2.8.1 3.1.8.8 1.2 1.8 1.2 3.1 0 4.4-2.8 5.4-5.5 5.7.4.4.8 1.1.8 2.2v3.2c0 .3.2.7.8.5A11.5 11.5 0 0 0 12 .7Z"/>
+  </symbol>
+  <symbol id="i-linkedin" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M20.5 2H3.5A1.5 1.5 0 0 0 2 3.5v17A1.5 1.5 0 0 0 3.5 22h17a1.5 1.5 0 0 0 1.5-1.5v-17A1.5 1.5 0 0 0 20.5 2ZM8 19H5V9.5h3ZM6.5 8.2A1.75 1.75 0 1 1 6.5 4.7a1.75 1.75 0 0 1 0 3.5ZM19 19h-3v-4.6c0-1.1 0-2.5-1.55-2.5s-1.8 1.2-1.8 2.45V19h-3V9.5h2.9v1.3h.04a3.18 3.18 0 0 1 2.86-1.57c3.06 0 3.55 2 3.55 4.64Z"/>
+  </symbol>
+  <symbol id="i-close" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+    <path d="m5 5 10 10M15 5 5 15"/>
+  </symbol>
 </svg>
 
 <a class="skip-link" href="#journey">Skip to content</a>
@@ -57,10 +69,10 @@
     </div>
 
     <div class="masthead__aside">
-      <p class="privacy-note">
-        <span class="privacy-note__dot" aria-hidden="true"></span>
-        Your figures stay in this browser
-      </p>
+      <button type="button" class="privacy-note" data-action="open-privacy" aria-haspopup="dialog">
+        <svg class="privacy-note__shield" aria-hidden="true" focusable="false"><use href="#i-shield"/></svg>
+        Understand my data security
+      </button>
       <div class="masthead__actions">
         <button type="button" class="button button--utility" data-action="print">
           <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-print"/></svg>
@@ -71,6 +83,55 @@
     </div>
   </div>
 </header>
+
+<dialog class="privacy-dialog" id="privacy-dialog" aria-labelledby="privacy-title">
+  <div class="privacy-dialog__header">
+    <div class="privacy-dialog__heading">
+      <span class="privacy-dialog__mark" aria-hidden="true">
+        <svg><use href="#i-shield"/></svg>
+      </span>
+      <div>
+        <p class="eyebrow">Privacy by design</p>
+        <h2 id="privacy-title">Your calculator data stays in your browser</h2>
+      </div>
+    </div>
+    <form method="dialog">
+      <button class="privacy-dialog__close" aria-label="Close privacy information">
+        <svg aria-hidden="true" focusable="false"><use href="#i-close"/></svg>
+      </button>
+    </form>
+  </div>
+
+  <div class="privacy-dialog__body">
+    <p class="privacy-dialog__lead">The salary, super and other figures you enter are calculated and saved locally on this device. SuperCap does not send them to me or store them on a server.</p>
+
+    <ul class="privacy-points">
+      <li>
+        <svg aria-hidden="true" focusable="false"><use href="#i-check"/></svg>
+        <span><strong>Local-only calculations.</strong> Your entries never need to leave the browser for the calculator to work.</span>
+      </li>
+      <li>
+        <svg aria-hidden="true" focusable="false"><use href="#i-check"/></svg>
+        <span><strong>Only light site analytics.</strong> SuperCap may use Google or Cloudflare analytics for basics such as page views and broad geography. Values entered into the calculator are not intentionally collected or included in analytics.</span>
+      </li>
+      <li>
+        <svg aria-hidden="true" focusable="false"><use href="#i-check"/></svg>
+        <span><strong>Dependency-free by design.</strong> The calculator uses plain HTML, CSS and JavaScript—no framework, third-party runtime packages or externally loaded fonts are required.</span>
+      </li>
+    </ul>
+
+    <div class="privacy-dialog__source">
+      <div>
+        <h3>Don’t take my word for it</h3>
+        <p>SuperCap is open source. You can inspect the code, download it and run it locally.</p>
+      </div>
+      <a class="button button--secondary privacy-dialog__github" href="https://github.com/jorks/supercap" target="_blank" rel="noopener noreferrer">
+        <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-github"/></svg>
+        View on GitHub
+      </a>
+    </div>
+  </div>
+</dialog>
 
 <main class="journey" id="journey">
 
@@ -744,9 +805,15 @@
     <a class="colophon__name" href="https://github.com/jorks" rel="noopener noreferrer">James Corcoran</a>
   </p>
   <p class="colophon__links">
-    <a href="https://github.com/jorks" rel="noopener noreferrer">GitHub</a>
+    <a href="https://github.com/jorks/supercap" rel="noopener noreferrer">
+      <svg class="colophon__github" aria-hidden="true" focusable="false"><use href="#i-github"/></svg>
+      GitHub
+    </a>
     <span aria-hidden="true">·</span>
-    <a href="https://www.linkedin.com/in/jamescorc/" rel="noopener noreferrer">LinkedIn</a>
+    <a href="https://www.linkedin.com/in/jamescorc/" rel="noopener noreferrer">
+      <svg class="colophon__social-icon" aria-hidden="true" focusable="false"><use href="#i-linkedin"/></svg>
+      LinkedIn
+    </a>
   </p>
 </footer>
 
