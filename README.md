@@ -139,6 +139,10 @@ SuperCap is general information, not financial, tax or superannuation advice. It
 planning aid built to save you a spreadsheet, not a substitute for advice from a
 qualified adviser or from the ATO. Check the numbers before you act on them.
 
+## Licence
+
+SuperCap is open source under the [MIT Licence](LICENSE).
+
 ---
 
 Made with love by [James Corcoran](https://github.com/jorks) · [LinkedIn](https://www.linkedin.com/in/jamescorc/)
