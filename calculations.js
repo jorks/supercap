@@ -513,14 +513,15 @@ window.SuperCapCalc = (function () {
   }
 
   /**
-   * The slider must reach past the cap so an over-cap election is explorable,
-   * but the ceiling is derived from the recommendation — never from the current
-   * thumb position, which would grow without bound as the user dragged right.
+   * The slider must reach through confirmed carry-forward room and a little past
+   * the effective cap so the choice is explorable. The ceiling is never derived
+   * from the current thumb position, which would grow without bound as it moved.
    */
   function calculateSliderMax(options) {
     var candidates = [
       nonNegative(options.practicalPerPayCents) * 1.5,
       nonNegative(options.exactToCapPerPayCents) * 1.25,
+      nonNegative(options.maximumEligiblePerPayCents) * 1.1,
       MIN_SLIDER_MAX_CENTS
     ];
     return roundUpToNiceCents(Math.max.apply(null, candidates));
@@ -535,13 +536,19 @@ window.SuperCapCalc = (function () {
     var deductions = Math.max(0, Math.round(options.remainingDeductions) || 0);
     var futureSacrificeCents = perPay * deductions;
     var projectedTotalCents = nonNegative(options.usedCents) + futureSacrificeCents;
+    var generalCapCents = Math.max(0, options.generalCapCents);
     var capCents = Math.max(0, options.effectiveCapCents);
+    var generalDifference = generalCapCents - projectedTotalCents;
     var difference = capCents - projectedTotalCents;
+    var amountAboveGeneralCapCents = Math.max(0, -generalDifference);
+    var carryForwardCents = nonNegative(options.carryForwardCents);
+    var carryForwardUsedCents = Math.min(amountAboveGeneralCapCents, carryForwardCents);
 
     var status;
     if (options.alreadyOverCap) status = 'exceeded';
     else if (difference < 0) status = 'over';
-    else if (difference <= NEAR_CAP_CENTS) status = 'near';
+    else if (carryForwardUsedCents > 0) status = 'carry-forward';
+    else if (generalDifference <= NEAR_CAP_CENTS) status = 'near';
     else if (perPay >= nonNegative(options.practicalPerPayCents) && perPay > 0) status = 'on-target';
     else status = 'under';
 
@@ -550,6 +557,10 @@ window.SuperCapCalc = (function () {
       remainingDeductions: deductions,
       futureSacrificeCents: futureSacrificeCents,
       projectedTotalCents: projectedTotalCents,
+      generalCapHeadroomCents: Math.max(0, generalDifference),
+      amountAboveGeneralCapCents: amountAboveGeneralCapCents,
+      carryForwardUsedCents: carryForwardUsedCents,
+      carryForwardRemainingCents: Math.max(0, carryForwardCents - carryForwardUsedCents),
       headroomCents: Math.max(0, difference),
       overCents: Math.max(0, -difference),
       fractionUsed: capCents > 0 ? projectedTotalCents / capCents : 0,
@@ -1170,6 +1181,11 @@ window.SuperCapCalc = (function () {
       otherConcessionalCents: otherConcessionalCents
     });
 
+    var generalCapState = calculateRemainingCap({
+      generalCapCents: capIsKnown ? rules.capCents : 0,
+      carryForwardCents: 0,
+      usedCents: usedCents
+    });
     var capState = calculateRemainingCap({
       generalCapCents: capIsKnown ? rules.capCents : 0,
       carryForwardCents: state.cap.carryForwardCents,
@@ -1196,14 +1212,15 @@ window.SuperCapCalc = (function () {
 
     // ── recommendation ──
     var recommendation = calculateRecommendation({
-      remainingCents: capState.remainingCents,
+      remainingCents: generalCapState.remainingCents,
       remainingDeductions: remainingDeductions,
       safetyBufferCents: state.safetyBufferCents
     });
 
     var sliderMaxCents = calculateSliderMax({
       practicalPerPayCents: recommendation.practicalPerPayCents,
-      exactToCapPerPayCents: recommendation.exactToCapPerPayCents
+      exactToCapPerPayCents: recommendation.exactToCapPerPayCents,
+      maximumEligiblePerPayCents: remainingDeductions > 0 ? capState.remainingCents / remainingDeductions : 0
     });
 
     var selectedPerPayCents = Number.isFinite(state.selectedPerPayCents)
@@ -1215,6 +1232,8 @@ window.SuperCapCalc = (function () {
       selectedPerPayCents: selectedPerPayCents,
       remainingDeductions: remainingDeductions,
       usedCents: usedCents,
+      generalCapCents: capIsKnown ? rules.capCents : 0,
+      carryForwardCents: state.cap.carryForwardCents,
       effectiveCapCents: capState.effectiveCapCents,
       practicalPerPayCents: recommendation.practicalPerPayCents,
       alreadyOverCap: capState.alreadyOverCap
@@ -1376,6 +1395,8 @@ window.SuperCapCalc = (function () {
       existing: {
         mode: state.existing.mode,
         cents: existingSacrificeCents,
+        actualReceivedCents: usingActuals ? nonNegative(state.actuals.salarySacrificeReceivedCents) : 0,
+        projectedRemainingCents: usingActuals ? existing.cents : 0,
         deductionsCounted: existing.deductionsCounted,
         paydaysCounted: existing.paydaysCounted,
         perPayCents: nonNegative(state.existing.perPayCents)
@@ -1392,7 +1413,14 @@ window.SuperCapCalc = (function () {
         usedBeforeFutureSacrificeCents: usedCents,
         generalCapCents: Number.isFinite(rules.capCents) ? rules.capCents : 0,
         carryForwardCents: nonNegative(state.cap.carryForwardCents),
+        carryForwardRemainingBeforeFutureCents: Math.max(
+          0,
+          capState.remainingCents - generalCapState.remainingCents
+        ),
         effectiveCapCents: capState.effectiveCapCents,
+        generalRawRemainingCents: generalCapState.rawRemainingCents,
+        generalRemainingCents: generalCapState.remainingCents,
+        alreadyOverGeneralCap: generalCapState.alreadyOverCap,
         rawRemainingCents: capState.rawRemainingCents,
         remainingCents: capState.remainingCents,
         alreadyOverCap: capState.alreadyOverCap
@@ -1417,6 +1445,15 @@ window.SuperCapCalc = (function () {
         applies: division293Applies,
         thresholdCents: rules.division293ThresholdCents,
         incomeProxyCents: incomeProxyCents
+      },
+
+      actuals: {
+        enabled: usingActuals,
+        employerReceivedCents: actualEmployerCents,
+        salarySacrificeReceivedCents: usingActuals
+          ? nonNegative(state.actuals.salarySacrificeReceivedCents)
+          : 0,
+        otherReceivedCents: usingActuals ? nonNegative(state.actuals.otherReceivedCents) : 0
       },
 
       usingActuals: usingActuals
@@ -1465,6 +1502,7 @@ window.SuperCapCalc = (function () {
     under: 'Under target',
     'on-target': 'On target',
     near: 'Near the cap',
+    'carry-forward': 'Using carry-forward',
     over: 'Over the cap',
     exceeded: 'Cap already exceeded'
   };
@@ -1487,14 +1525,24 @@ window.SuperCapCalc = (function () {
         '.'
       );
     }
+    if (projection.status === 'carry-forward') {
+      return (
+        perPay +
+        ' ' +
+        per +
+        ' uses about ' +
+        formatCurrency(projection.carryForwardUsedCents) +
+        ' of your confirmed carry-forward cap.'
+      );
+    }
     if (projection.status === 'near') {
       return (
         perPay +
         ' ' +
         per +
         ' projects to within ' +
-        formatCurrency(projection.headroomCents) +
-        ' of the cap.'
+        formatCurrency(projection.generalCapHeadroomCents) +
+        ' of the general cap.'
       );
     }
     if (projection.status === 'on-target') {
@@ -1505,8 +1553,8 @@ window.SuperCapCalc = (function () {
         ' projects to ' +
         formatCurrency(projection.projectedTotalCents) +
         ', about ' +
-        formatCurrency(projection.headroomCents) +
-        ' below the cap.'
+        formatCurrency(projection.generalCapHeadroomCents) +
+        ' below the general cap.'
       );
     }
     return (
@@ -1514,8 +1562,8 @@ window.SuperCapCalc = (function () {
       ' ' +
       per +
       ' leaves about ' +
-      formatCurrency(projection.headroomCents) +
-      ' of your cap unused.'
+      formatCurrency(projection.generalCapHeadroomCents) +
+      ' of your general cap unused.'
     );
   }
 
@@ -1564,13 +1612,21 @@ window.SuperCapCalc = (function () {
     }
     capSentence +=
       ', about ' +
-      formatCurrency(result.usage.remainingCents) +
+      formatCurrency(result.usage.generalRemainingCents) +
       ' of your ' +
-      formatCurrency(result.usage.effectiveCapCents) +
+      formatCurrency(result.usage.generalCapCents) +
       ' ' +
       year +
-      ' cap remains.';
+      ' general cap remains.';
     sentences.push(capSentence);
+
+    if (result.usage.carryForwardCents > 0) {
+      sentences.push(
+        'You have ' +
+          formatCurrency(result.usage.carryForwardRemainingBeforeFutureCents) +
+          ' of confirmed carry-forward cap remaining above the general cap. It is not included in the recommendation.'
+      );
+    }
 
     if (result.payroll.remainingDeductions > 0) {
       sentences.push(

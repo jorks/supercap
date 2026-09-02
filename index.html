@@ -479,6 +479,7 @@
               <span data-field="slider-max">$250</span>
             </div>
             <p class="slider__exact" data-field="exact-target"></p>
+            <p class="slider__carry is-hidden" data-region="carry-forward-slider-note"></p>
           </div>
 
           <fieldset class="buffer">
@@ -556,7 +557,13 @@
           <dl class="ledger__rows" data-region="breakdown"></dl>
         </section>
       </div>
-      <p class="explanation" data-field="explanation"></p>
+      <div class="ledger__explanation">
+        <p class="explanation" data-field="explanation"></p>
+        <p class="carry-arrangement is-hidden" data-region="carry-forward-arrangement" role="alert">
+          <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-error"/></svg>
+          <span>You can use eligible carry-forward cap above the general cap, but your employer will not do this automatically. You may need to make a salary-sacrifice arrangement or give Payroll additional instructions.</span>
+        </p>
+      </div>
     </div>
   </section>
 

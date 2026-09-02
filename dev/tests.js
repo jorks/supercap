@@ -756,7 +756,33 @@ window.SuperCapTests = (function () {
       equal(result.usage.generalCapCents, 3250000);
       equal(result.usage.effectiveCapCents, 4250000);
       closeTo(result.usage.remainingCents, 1350384, 2);
-      assert(result.recommendation.practicalPerPayCents > 60000, 'more room means a much larger recommendation');
+      closeTo(result.usage.generalRemainingCents, 350384, 2);
+      equal(result.recommendation.practicalPerPayCents, 14900, 'the recommendation still stops at the general cap');
+      assert(result.slider.maxCents > result.recommendation.practicalPerPayCents, 'the slider still reaches into carry-forward room');
+    });
+
+    it('keeps advanced concessional contribution categories separate', function () {
+      var result = run({
+        other: {
+          employerConcessionalCents: 100000,
+          personalDeductibleCents: 200000,
+          otherConcessionalCents: 50000
+        }
+      });
+      equal(result.other.employerConcessionalCents, 100000);
+      equal(result.other.personalDeductibleCents, 200000);
+      equal(result.other.otherConcessionalCents, 50000);
+      equal(result.other.totalCents, 350000);
+    });
+
+    it('shows carry-forward separately when the selected amount goes above the general cap', function () {
+      var result = run({
+        cap: { carryForwardCents: 1000000 },
+        selectedPerPayCents: 40000
+      });
+      equal(result.projection.status, 'carry-forward');
+      assert(result.projection.carryForwardUsedCents > 0);
+      equal(result.projection.overCents, 0, 'using eligible carry-forward does not exceed the effective cap');
     });
 
     it('blocks a future year with no published cap, then accepts a manual one', function () {
@@ -866,6 +892,13 @@ window.SuperCapTests = (function () {
         result.employer.totalSgCents,
         result.employer.actualReceivedCents + result.employer.projectedRemainingCents,
         'actual plus projected must be the whole story'
+      );
+      equal(result.actuals.employerReceivedCents, 1400000);
+      equal(result.actuals.salarySacrificeReceivedCents, 200000);
+      equal(
+        result.existing.cents,
+        result.existing.actualReceivedCents + result.existing.projectedRemainingCents,
+        'received and projected salary sacrifice must reconcile'
       );
       assert(
         result.issues.some(function (item) {

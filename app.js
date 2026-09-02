@@ -590,11 +590,26 @@
         '.';
     }
 
-    var lines = ['Hi Payroll,', '', request, '', 'Please let me know if you need anything further from me.', '', 'Thanks,'];
+    var lines = ['Hi Payroll,', '', request];
+    if (emailUsesCarryForward()) {
+      lines.push(
+        '',
+        'I intend to use part of my confirmed unused carry-forward concessional cap. This amount may take my concessional contributions above the general annual cap, so please let me know if you need any additional instruction or arrangement from me.'
+      );
+    }
+    lines.push('', 'Please let me know if you need anything further from me.', '', 'Thanks,');
     var signature = email.name.trim();
     if (signature) lines.push(signature);
 
     return lines.join('\n');
+  }
+
+  function emailUsesCarryForward() {
+    if (!result || result.usage.carryForwardCents <= 0 || result.payroll.remainingDeductions <= 0) return false;
+    var projected =
+      result.usage.usedBeforeFutureSacrificeCents +
+      emailAmountCents() * result.payroll.remainingDeductions;
+    return emailAmountCents() > 0 && projected > result.usage.generalCapCents;
   }
 
   // ────────────────────────────────────────────────────────────── actions ──
@@ -1033,11 +1048,61 @@
       }
     ];
 
-    if (journey.showAdvanced) {
-      rows.push({ step: 'advanced', label: 'Advanced', value: 'Custom employer super or other contributions' });
+    var advanced = advancedSummaryParts();
+    if (advanced.length > 0) {
+      rows.push({ step: 'advanced', label: 'Advanced', value: advanced.join(' · ') });
     }
 
     return rows;
+  }
+
+  function publishedSgRate() {
+    var year = DATA.financialYears && DATA.financialYears[state.financialYearKey];
+    return year && year.super && Number.isFinite(year.super.sgRate) ? year.super.sgRate : null;
+  }
+
+  function hasChangedSgRate() {
+    var published = publishedSgRate();
+    return Number.isFinite(published) && Math.abs(state.employerSuper.sgRate - published) > 0.000001;
+  }
+
+  function formatSgRate(rate) {
+    var percent = rate * 100;
+    return Calc.formatPercent(rate, Number.isInteger(percent) ? 0 : 2);
+  }
+
+  function advancedSummaryParts() {
+    var parts = [];
+
+    if (hasChangedSgRate()) parts.push('SG rate ' + formatSgRate(state.employerSuper.sgRate));
+    if (state.cap.manualMaxBaseCents > 0) parts.push('Maximum base ' + money(state.cap.manualMaxBaseCents));
+    if (!state.employerSuper.applyMaxBase) parts.push('Maximum base not applied');
+
+    if (state.actuals.enabled) {
+      parts.push('Using actual fund figures');
+      if (state.actuals.employerReceivedCents > 0) {
+        parts.push(money(state.actuals.employerReceivedCents) + ' employer received');
+      }
+      if (state.actuals.salarySacrificeReceivedCents > 0) {
+        parts.push(money(state.actuals.salarySacrificeReceivedCents) + ' sacrifice received');
+      }
+      if (state.actuals.otherReceivedCents > 0) {
+        parts.push(money(state.actuals.otherReceivedCents) + ' other received');
+      }
+      return parts;
+    }
+
+    if (state.other.employerConcessionalCents > 0) {
+      parts.push(money(state.other.employerConcessionalCents) + ' other employer');
+    }
+    if (state.other.personalDeductibleCents > 0) {
+      parts.push(money(state.other.personalDeductibleCents) + ' personal deductible');
+    }
+    if (state.other.otherConcessionalCents > 0) {
+      parts.push(money(state.other.otherConcessionalCents) + ' other concessional');
+    }
+
+    return parts;
   }
 
   function existingNote() {
@@ -1171,6 +1236,7 @@
 
     positionSliderMarker();
     renderExactTarget();
+    renderCarryForwardSliderNote();
     var reset = region('reset-slider');
     var atRecommendation =
       result.projection.selectedPerPayCents === result.recommendation.practicalPerPayCents;
@@ -1181,6 +1247,17 @@
         atRecommendation ? 'Slider is at the recommendation' : 'Reset slider to recommendation'
       );
     }
+  }
+
+  function renderCarryForwardSliderNote() {
+    var note = region('carry-forward-slider-note');
+    var available = result.usage.carryForwardRemainingBeforeFutureCents;
+    show(note, available > 0);
+    if (available <= 0) return;
+    note.textContent =
+      'The recommendation stops at the general cap. You can move the slider higher into your remaining ' +
+      money(available) +
+      ' of confirmed carry-forward cap.';
   }
 
   /**
@@ -1359,19 +1436,29 @@
   }
 
   function renderStatus() {
-    if (result.hasBlockingIssue) return;
+    var arrangement = region('carry-forward-arrangement');
+    if (result.hasBlockingIssue) {
+      show(arrangement, false);
+      return;
+    }
 
     var container = region('status');
     var projection = result.projection;
-    var tone = projection.status === 'over' || projection.status === 'exceeded' ? 'warning'
+    var tone = projection.status === 'over' || projection.status === 'exceeded' || projection.status === 'carry-forward' ? 'warning'
       : projection.status === 'on-target' || projection.status === 'near' ? 'success'
       : 'info';
 
-    container.className = 'status status--' + tone;
+    container.className =
+      'status status--' + tone +
+      (projection.status === 'carry-forward' ? ' status--carry-forward' : '');
     container.querySelector('use').setAttribute('href', ICONS[tone]);
 
     setText('status-label', Calc.statusLabel(projection.status));
     setText('status-text', Calc.describeStatus(result));
+    show(
+      arrangement,
+      projection.carryForwardUsedCents > 0 && projection.selectedPerPayCents > 0
+    );
   }
 
   function renderIssues() {
@@ -1429,18 +1516,75 @@
 
     setText('breakdown-year', result.financialYear.label);
 
-    var rows = [
-      { label: 'Employer super (salary)', cents: result.employer.salarySgCents },
-      { label: 'Employer super (bonus)', cents: result.employer.bonusSgCents, omitWhenZero: true },
-      { label: 'Salary sacrifice so far', cents: result.existing.cents },
-      { label: 'Other concessional contributions', cents: result.other.totalCents, omitWhenZero: true },
+    var sgSuffix = hasChangedSgRate() ? ' · ' + formatSgRate(state.employerSuper.sgRate) + ' SG' : '';
+    var rows = [];
+
+    if (result.usingActuals) {
+      rows.push(
+        {
+          label: 'Employer contributions received',
+          cents: result.actuals.employerReceivedCents,
+          omitWhenZero: true
+        },
+        {
+          label: 'Projected employer super remaining' + sgSuffix,
+          cents: result.employer.projectedRemainingCents,
+          omitWhenZero: true
+        },
+        {
+          label: 'Salary sacrifice received',
+          cents: result.actuals.salarySacrificeReceivedCents,
+          omitWhenZero: true
+        },
+        {
+          label: 'Current salary sacrifice remaining',
+          cents: result.existing.projectedRemainingCents,
+          omitWhenZero: true
+        },
+        {
+          label: 'Other concessional contributions received',
+          cents: result.actuals.otherReceivedCents,
+          omitWhenZero: true
+        }
+      );
+    } else {
+      rows.push(
+        { label: 'Employer super (salary)' + sgSuffix, cents: result.employer.salarySgCents },
+        { label: 'Employer super (bonus)' + sgSuffix, cents: result.employer.bonusSgCents, omitWhenZero: true },
+        { label: 'Salary sacrifice so far', cents: result.existing.cents },
+        {
+          label: 'Other employer contributions',
+          cents: result.other.employerConcessionalCents,
+          omitWhenZero: true
+        },
+        {
+          label: 'Personal deductible contributions',
+          cents: result.other.personalDeductibleCents,
+          omitWhenZero: true
+        },
+        {
+          label: 'Other concessional contributions',
+          cents: result.other.otherConcessionalCents,
+          omitWhenZero: true
+        }
+      );
+    }
+
+    rows.push(
       { label: 'Future salary sacrifice', cents: result.projection.futureSacrificeCents },
-      { label: 'Projected concessional contributions', cents: result.projection.projectedTotalCents, kind: 'subtotal' }
-    ];
+      {
+        label: 'Projected concessional contributions',
+        cents: result.projection.projectedTotalCents,
+        kind: 'subtotal'
+      }
+    );
 
     if (result.usage.carryForwardCents > 0) {
       rows.push({ label: result.financialYear.shortLabel + ' general cap', cents: result.usage.generalCapCents });
       rows.push({ label: 'Confirmed carry-forward cap', cents: result.usage.carryForwardCents });
+      if (result.projection.carryForwardUsedCents > 0) {
+        rows.push({ label: 'Carry-forward used', cents: result.projection.carryForwardUsedCents });
+      }
       rows.push({ label: 'Your effective cap', cents: result.usage.effectiveCapCents, kind: 'subtotal' });
     } else {
       rows.push({ label: result.financialYear.shortLabel + ' concessional cap', cents: result.usage.effectiveCapCents });
@@ -1449,7 +1593,11 @@
     rows.push(
       result.projection.overCents > 0
         ? { label: 'Over the cap', cents: result.projection.overCents, kind: 'total', tone: 'over' }
-        : { label: 'Remaining', cents: result.projection.headroomCents, kind: 'total' }
+        : {
+            label: result.usage.carryForwardCents > 0 ? 'Effective cap remaining' : 'Remaining',
+            cents: result.projection.headroomCents,
+            kind: 'total'
+          }
     );
 
     fillLedger(list, rows);

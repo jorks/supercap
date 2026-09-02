@@ -1338,6 +1338,30 @@ select.control {
   color: var(--ink-soft);
 }
 
+.slider__carry {
+  margin-top: 6px;
+  font-size: 0.79rem;
+  line-height: 1.5;
+  color: var(--warning);
+}
+
+.carry-arrangement {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dotted #e1c4c0;
+  color: var(--danger);
+  font-size: 0.8rem;
+  line-height: 1.5;
+}
+
+.carry-arrangement .icon {
+  flex: 0 0 auto;
+  margin-top: 2px;
+}
+
 .buffer {
   margin-top: 12px;
 }
@@ -1545,6 +1569,23 @@ select.control {
   flex: 1 1 220px;
 }
 
+.status--carry-forward {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: 2px 9px;
+}
+
+.status--carry-forward .status__icon {
+  grid-row: 1 / span 2;
+  margin-top: 1px;
+}
+
+.status--carry-forward .status__label,
+.status--carry-forward .status__text {
+  grid-column: 2;
+}
+
 /* ────────────────────────────────────────────────────────────── infobox ── */
 
 .infobox {
@@ -1688,6 +1729,10 @@ select.control {
   .ledger__layout .explanation {
     margin-top: 0;
   }
+}
+
+.ledger__explanation {
+  min-width: 0;
 }
 
 .ledger__rows {

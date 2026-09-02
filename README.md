@@ -54,9 +54,11 @@ Node without a browser.
 2. **Employer super is calculated on that pro-rated salary**, capped by the maximum
    contribution base where one applies, plus super on the bonus if it is paid in the year.
 3. **Everything already counted is added up** (employer super, salary sacrifice you have
-   already made, personal deductible contributions) and subtracted from your cap.
+   already made, personal deductible contributions) and subtracted from the general cap.
 4. **What is left is divided by the pays you have remaining**, less a safety buffer, and
    rounded down to a whole dollar. Rounding down means rounding can never push you over.
+   Confirmed carry-forward room extends the slider, but is not included in the recommended
+   amount automatically.
 
 All money is held internally as integer cents, so no figure is ever the victim of
 floating point. Dates are ISO strings compared as UTC day numbers, so nothing shifts
