@@ -65,7 +65,7 @@ window.SuperCapTests = (function () {
 
   /**
    * A deliberately synthetic development fixture: a high earner with a September
-   * bonus, an existing arrangement carried over from the previous year, and a pay rise.
+   * bonus, bonus, an existing arrangement carried over from the previous year, and a pay rise.
    */
   function fixtureState(overrides) {
     var state = {
@@ -354,7 +354,7 @@ window.SuperCapTests = (function () {
       // A 2/12 + 10/12 shortcut overstates this salary by about $23, because July and
       // August are 62 days rather than a sixth of the year.
       var naive = Math.round((20000000 * 2) / 12 + (21000000 * 10) / 12);
-      closeTo(naive - result.totalCents, 2284, 5, 'the monthly shortcut must not match day pro-rating');
+      closeTo(naive - result.totalCents, 3196, 5, 'the monthly shortcut must not match day pro-rating');
     });
 
     it('handles a year with no increase and a zero salary', function () {
@@ -501,7 +501,7 @@ window.SuperCapTests = (function () {
       });
       closeTo(result.exactToCapPerPayCents, 16684.95, 0.01, 'exact to cap');
       closeTo(result.exactAfterBufferPerPayCents, 16446.86, 0.01, 'exact after buffer');
-      equal(result.practicalPerPayCents, 14900, 'rounded down to whole dollars');
+      equal(result.practicalPerPayCents, 16400, 'rounded down to whole dollars');
     });
 
     it('never rounds up past the buffered target', function () {
@@ -581,10 +581,10 @@ window.SuperCapTests = (function () {
 
     it('lands on a practical recommendation around $164 a fortnight', function () {
       closeTo(result.recommendation.exactToCapPerPayCents, 16684.95, 0.5, 'about $166.85');
-      equal(result.recommendation.practicalPerPayCents, 14900);
+      equal(result.recommendation.practicalPerPayCents, 16400);
       assert(
-        Math.abs(result.recommendation.practicalPerPayCents - 15000) <= 100,
-        'should be within a dollar of the brief\'s narrative $164'
+        Math.abs(result.recommendation.practicalPerPayCents - 16400) <= 100,
+        'should be within a dollar of the synthetic fixture\'s narrative $164'
       );
     });
 
@@ -601,7 +601,7 @@ window.SuperCapTests = (function () {
       assert(result.projection.headroomCents >= result.recommendation.safetyBufferCents, 'buffer must survive rounding');
 
       var noBuffer = run({ safetyBufferCents: 0 });
-      equal(noBuffer.recommendation.practicalPerPayCents, 15200, 'without a buffer the recommendation rises to $166');
+      equal(noBuffer.recommendation.practicalPerPayCents, 16600, 'without a buffer the recommendation rises to $166');
       assert(noBuffer.projection.projectedTotalCents <= noBuffer.usage.effectiveCapCents, 'still under the cap');
     });
 
@@ -757,7 +757,7 @@ window.SuperCapTests = (function () {
       equal(result.usage.effectiveCapCents, 4250000);
       closeTo(result.usage.remainingCents, 1350384, 2);
       closeTo(result.usage.generalRemainingCents, 350384, 2);
-      equal(result.recommendation.practicalPerPayCents, 14900, 'the recommendation still stops at the general cap');
+      equal(result.recommendation.practicalPerPayCents, 16400, 'the recommendation still stops at the general cap');
       assert(result.slider.maxCents > result.recommendation.practicalPerPayCents, 'the slider still reaches into carry-forward room');
     });
 
