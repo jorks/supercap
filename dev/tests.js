@@ -65,7 +65,7 @@ window.SuperCapTests = (function () {
 
   /**
    * A deliberately synthetic development fixture: a high earner with a September
-   * bonus, bonus, an existing arrangement carried over from the previous year, and a pay rise.
+   * bonus, an existing arrangement carried over from the previous year, and a pay rise.
    */
   function fixtureState(overrides) {
     var state = {
@@ -154,7 +154,7 @@ window.SuperCapTests = (function () {
       equal(Calc.formatCurrency(undefined), '$0');
       equal(Calc.formatCurrency(-0), '$0');
       equal(Calc.formatCurrency(15000, { decimals: 'auto' }), '$150');
-      equal(Calc.formatCurrency(15210, { decimals: 'auto' }), '$166.85');
+      equal(Calc.formatCurrency(16685, { decimals: 'auto' }), '$166.85');
     });
 
     it('round-trips cents without floating point drift', function () {
