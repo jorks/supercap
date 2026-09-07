@@ -2,7 +2,7 @@
 <html lang="en-AU">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>SuperCap: Australian super salary sacrifice calculator</title>
 <meta name="description" content="Work out how much to salary sacrifice into super each pay to get close to your concessional contributions cap without going over. Runs entirely in your browser.">
 <meta name="author" content="James Corcoran">
@@ -134,6 +134,57 @@
 </dialog>
 
 <main class="journey" id="journey">
+
+  <section class="welcome" data-region="welcome" aria-labelledby="welcome-title">
+    <div class="welcome__hero">
+      <span class="welcome__shield" aria-hidden="true">
+        <svg><use href="#i-shield"/></svg>
+      </span>
+      <p class="eyebrow">Welcome to SuperCap</p>
+      <h2 id="welcome-title" tabindex="-1">Plan your super contributions with confidence</h2>
+      <p class="welcome__lead">SuperCap turns your salary, payroll timing and contributions so far into a practical salary-sacrifice estimate for each pay.</p>
+    </div>
+
+    <ul class="welcome__assurances">
+      <li>
+        <svg aria-hidden="true" focusable="false"><use href="#i-shield"/></svg>
+        <div>
+          <h3>Your figures stay private</h3>
+          <p>Calculations and saved figures stay in this browser. Lightweight traffic analytics may count visits and broad geography, but nothing you enter into the calculator is tracked or collected.</p>
+          <button type="button" class="welcome__text-button" data-action="open-privacy">Understand my data security</button>
+        </div>
+      </li>
+      <li>
+        <svg aria-hidden="true" focusable="false"><use href="#i-check"/></svg>
+        <div>
+          <h3>Explore with example figures</h3>
+          <p>SuperCap begins with dummy data, so you can see how it works before entering anything personal. You can reset everything at any time.</p>
+        </div>
+      </li>
+      <li>
+        <svg aria-hidden="true" focusable="false"><use href="#i-info"/></svg>
+        <div>
+          <h3>An estimate, not financial advice</h3>
+          <p>Rules, payroll and contribution timing can change the outcome. Check your fund records and confirm the figures with your super fund, payroll or the ATO before acting.</p>
+        </div>
+      </li>
+    </ul>
+
+    <div class="welcome__actions">
+      <button type="button" class="button button--primary welcome__start" data-action="start-welcome">
+        Get started
+        <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-arrow"/></svg>
+      </button>
+      <p>
+        Open source and dependency-free
+        <span aria-hidden="true">·</span>
+        <a href="https://github.com/jorks/supercap" target="_blank" rel="noopener noreferrer">
+          <svg aria-hidden="true" focusable="false"><use href="#i-github"/></svg>
+          View on GitHub
+        </a>
+      </p>
+    </div>
+  </section>
 
   <nav class="stepper" data-region="stepper" aria-label="Setup progress">
     <p class="stepper__status" data-field="stepper-status"></p>
@@ -692,7 +743,7 @@
           <span class="letter__label">To</span>
           <span class="letter__value" data-field="letter-to">Payroll</span>
         </p>
-        <p class="letter__line">
+        <p class="letter__line letter__line--subject">
           <label class="letter__label" for="in-email-subject">Subject</label>
           <input class="letter__input" type="text" id="in-email-subject">
         </p>
