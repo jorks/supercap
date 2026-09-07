@@ -17,10 +17,15 @@ Double-clicking the file works. So does dragging it onto a browser window. It ru
 
 ## Privacy
 
-SuperCap may use light analytics from Google or Cloudflare to understand site traffic,
-such as page views and broad geography. These analytics do not track, collect or
-receive anything you enter into the calculator. Your calculator data stays in your
-browser.
+SuperCap is designed so the calculator itself contains no analytics code.
+
+When you use the hosted site, Cloudflare Web Analytics measures basic site traffic such
+as page views, referrers and broad geography. Nothing you enter into the calculator is
+sent to analytics.
+
+The analytics are applied to the hosted site rather than built into the SuperCap
+application itself. If you download SuperCap or run it locally, no analytics are
+included and the calculator can run without Cloudflare or any analytics service.
 
 Your figures are saved to `localStorage` so the page remembers them when you come back.
 "Reset all data" in the header clears that immediately. If you would rather it never
