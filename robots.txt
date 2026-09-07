@@ -1,0 +1,30 @@
+# Search and citation crawlers may index the public site. Model-training
+# crawlers are handled separately so discovery does not imply training consent.
+User-agent: *
+Allow: /
+Disallow: /dev/
+
+User-agent: OAI-SearchBot
+Allow: /
+Disallow: /dev/
+
+User-agent: ChatGPT-User
+Allow: /
+Disallow: /dev/
+
+User-agent: GPTBot
+Disallow: /
+
+User-agent: Google-Extended
+Disallow: /
+
+User-agent: ClaudeBot
+Disallow: /
+
+User-agent: Applebot-Extended
+Disallow: /
+
+User-agent: CCBot
+Disallow: /
+
+Sitemap: https://supercap.jorks.net/sitemap.xml
