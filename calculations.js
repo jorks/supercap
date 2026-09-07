@@ -217,6 +217,13 @@ window.SuperCapCalc = (function () {
     return parts.day + ' ' + MONTH_ABBR[parts.month - 1] + ' ' + parts.year;
   }
 
+  /** '03 Sep 2026' — fixed-width day for vertically aligned schedules. */
+  function formatDateTabular(iso) {
+    var parts = dateParts(iso);
+    if (!parts) return '';
+    return pad(parts.day, 2) + ' ' + MONTH_ABBR[parts.month - 1] + ' ' + parts.year;
+  }
+
   /** '11 Sep' — for dense lists where the year is already established. */
   function formatDateCompact(iso) {
     var parts = dateParts(iso);
@@ -1733,6 +1740,7 @@ window.SuperCapCalc = (function () {
     todayISO: todayISO,
     formatDateLong: formatDateLong,
     formatDateShort: formatDateShort,
+    formatDateTabular: formatDateTabular,
     formatDateCompact: formatDateCompact,
     formatWeekday: formatWeekday,
 

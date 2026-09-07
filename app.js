@@ -158,7 +158,7 @@
 
   function defaultJourney() {
     return {
-      phase: 'setup',
+      phase: 'welcome',
       step: 'year',
       furthest: 0,
       returnToResults: false,
@@ -630,6 +630,7 @@
         'skip-bonus': skipBonus,
         'open-advanced': openAdvanced,
         'open-privacy': openPrivacy,
+        'start-welcome': startWelcome,
         'edit-setup': editSetup,
         'edit-step': function () {
           goToStep(trigger.dataset.step, true);
@@ -695,7 +696,7 @@
 
   function resetAll() {
     var confirmed = window.confirm(
-      'Reset SuperCap?\n\nThis clears the figures saved in this browser and restores the example values.'
+      'Reset SuperCap?\n\nThis clears the figures saved in this browser, restores the example values and returns to the welcome page.'
     );
     if (!confirmed) return;
 
@@ -706,7 +707,17 @@
     pristine = true;
     regenerateEmail(true);
     render();
+    var welcomeTitle = document.getElementById('welcome-title');
+    if (welcomeTitle) welcomeTitle.focus();
     toast('Reset to defaults');
+  }
+
+  function startWelcome() {
+    journey.phase = 'setup';
+    journey.step = 'year';
+    render();
+    save();
+    focusCurrentStep();
   }
 
   function stepIndex(id) {
@@ -935,11 +946,15 @@
   }
 
   function renderJourney() {
+    var inWelcome = journey.phase === 'welcome';
     var inSetup = journey.phase === 'setup';
+    var inResults = journey.phase === 'results';
+    document.body.classList.toggle('is-welcome', inWelcome);
     document.body.classList.toggle('is-setup', inSetup);
-    document.body.classList.toggle('is-results', !inSetup);
+    document.body.classList.toggle('is-results', inResults);
+    show(region('welcome'), inWelcome);
     show(region('setup'), inSetup);
-    show(region('results'), !inSetup);
+    show(region('results'), inResults);
     show(region('stepper'), inSetup);
 
     Array.prototype.forEach.call(document.querySelectorAll('[data-step]'), function (card) {
@@ -1763,7 +1778,7 @@
 
       node.querySelector('.schedule__index').textContent = entry.index ? String(entry.index) : '';
       node.querySelector('.schedule__weekday').textContent = Calc.formatWeekday(entry.date);
-      node.querySelector('.schedule__date').textContent = Calc.formatDateShort(entry.date);
+      node.querySelector('.schedule__date').textContent = Calc.formatDateTabular(entry.date);
 
       var startsSacrifice = entry.kind === 'payday' && entry.date === payroll.effectiveDate;
 

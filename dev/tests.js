@@ -181,6 +181,7 @@ window.SuperCapTests = (function () {
     it('treats dates as calendar days, so no timezone can shift them', function () {
       equal(Calc.formatDateLong('2026-09-11'), '11 September 2026');
       equal(Calc.formatDateShort('2026-09-11'), '11 Sep 2026');
+      equal(Calc.formatDateTabular('2026-07-03'), '03 Jul 2026');
       equal(Calc.formatDateCompact('2026-09-11'), '11 Sep');
       equal(Calc.formatWeekday('2026-09-11'), 'Fri');
       equal(Calc.addDays('2026-09-11', 14), '2026-09-25');
